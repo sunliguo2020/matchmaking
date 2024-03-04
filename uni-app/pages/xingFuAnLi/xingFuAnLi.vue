@@ -1,6 +1,10 @@
 <template>
 	<view>
 		<view>我们脱单了</view>
+		<view v-for="item in anli">
+			<view>{{item._id}}</view>
+			<view>{{item.content}}</view>
+		</view>
 	</view>
 </template>
 
@@ -15,7 +19,6 @@
 
 	const getAnli = async () => {
 		let res = await apiAnli({
-
 		});
 		console.log(res);
 		anli.value = res.data;

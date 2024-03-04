@@ -25,9 +25,9 @@ export function request(config = {}) {
 			//请求成功后的回调函数
 			success: res => {
 				console.log('请求成功返回的res',res)
-				if (res.code == 2000) {
+				if (res.data.code == 200) {
 					resolve(res.data);
-				} else if (res.code === 400) {
+				} else if (res.data.code === 400) {
 					uni.showModal({
 						title: "错误提示",
 						content: res.msg,
