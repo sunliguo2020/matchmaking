@@ -9,6 +9,6 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('list/', views.AnLi.as_view(), name='anli_list'),
+    path('anli/', views.AnLi.as_view(), name='anli_list'),
     path('images/<pk>/', views.ImagesDetailView.as_view(), name='images-detail'),
 ]
