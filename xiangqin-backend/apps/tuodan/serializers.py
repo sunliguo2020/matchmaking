@@ -27,7 +27,7 @@ class AnLiSerializer(serializers.ModelSerializer):
             "_id",
             "comment_num",
             "zan_status",
-            "commentstatus",
+            "commentStatus",
             "avatar",
             "title",
             "content",

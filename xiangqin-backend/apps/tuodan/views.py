@@ -1,10 +1,17 @@
+import json
+import os.path
+
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
+from django.views import View
 from rest_framework import serializers, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from . import models
 from .serializers import AnLiSerializer, ImagesSerializer
+
+from crawl_data.getAnli import getAnliByPage
+from utils.tools import get_remote_image_content_file
 
 
 # Create your views here.
@@ -49,3 +56,56 @@ class ImagesDetailView(APIView):
         print(f"查找到所有的Image对象{article}")
         serializer = ImagesSerializer(instance=article, context=context)
         return Response(serializer.data)
+
+
+class AnLiCrawl(APIView):
+    def get(self, request):
+        page = request.query_params.get('page', 1)
+        result = getAnliByPage(page)
+
+        if result.get('code') == 200:
+            data = result.get('data').get('list')
+        else:
+            print('抓取失败')
+            return Response({'code': 400, "msg": '抓取失败', "data": result})
+
+        # 开始存入数据库中
+        for item in data:
+            print(item)
+            # print(item.get('id'))
+            # 检查id是否已存在
+            if not models.XingFuAnLi.objects.filter(_id=item.get('id')).exists():
+                # 创建处 avatar和imgurl的对象
+                obj = models.XingFuAnLi.objects.create(
+                    _id=item.get('id'),
+                    comment_num=item.get('comment_num'),
+                    zan_status=item.get('zan_status'),
+                    commentStatus=item.get('commentStatus'),
+                    title=item.get('title'),
+                    content=item.get('content'),
+                    hits=item.get('hits'),
+                    commentlist=json.dumps(item.get('commentlist')),
+                    addtime=item.get('addtime'),
+                    nickname=item.get('nickname'),
+                )
+                # 保存头像
+                obj.avatar = get_remote_image_content_file(item.get('avatar'))
+                # 头像名
+                obj.avatar.name = os.path.basename(item.get('avatar'))
+
+                # 保存图片
+                if len(item.get('imgurl')) >0:
+                    for img in item.get('imgurl'):
+                        print(img)
+                        img_content_file = get_remote_image_content_file(img)
+                        image_obj = models.Images.objects.create(anliInfo=obj)
+                        image_obj.image = img_content_file
+                        image_obj.image.name = os.path.basename(img)
+
+                        image_obj.save()
+
+                obj.save()
+
+            else:
+                print(f'已经存在')
+        return Response({'data': result})

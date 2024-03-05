@@ -11,4 +11,5 @@ from . import views
 urlpatterns = [
     path('anli/', views.AnLi.as_view(), name='anli_list'),
     path('images/<pk>/', views.ImagesDetailView.as_view(), name='images-detail'),
+    path('crawl/', views.AnLiCrawl.as_view())
 ]
