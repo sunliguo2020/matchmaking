@@ -1,5 +1,5 @@
 from django.db import models
-
+from datetime import date
 
 # from apps.images.models import Images
 
@@ -17,7 +17,7 @@ class XingFuAnLi(models.Model):
     content = models.CharField(max_length=100)
     hits = models.CharField(max_length=100)
     commentlist = models.CharField(max_length=100)
-    addtime = models.DateField(auto_now=True)
+    addtime = models.DateField(default=date.today)
     nickname = models.CharField('昵称', max_length=100)
 
     class Meta:

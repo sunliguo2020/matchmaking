@@ -130,6 +130,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Older versions of Django that use os module for path traversal do this instead
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
+# 跨域
 #
 # CORS_ALLOWED_ORIGINS = [
 #     "https://example.com",
@@ -144,3 +145,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ORIGIN_ALLOW_ALL = True
+
+
+# drf 分页
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
+}

@@ -1,10 +1,13 @@
+from datetime import datetime
 import json
 import os.path
 
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.views import View
 from rest_framework import serializers, status
+from rest_framework.generics import ListAPIView, ListCreateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from . import models
@@ -12,21 +15,16 @@ from .serializers import AnLiSerializer, ImagesSerializer
 
 from crawl_data.getAnli import getAnliByPage
 from utils.tools import get_remote_image_content_file
+from utils.CustomPagination import CustomPagination
 
 
 # Create your views here.
 
 
-class AnLi(APIView):
-    def get(self, request):
-        obj = models.XingFuAnLi.objects.all()
-        # AssertionError: `HyperlinkedRelatedField` requires the request in the serializer context.
-        # Add `context={'request': request}` when instantiating the serializer.
-        context = {'request': request}
-        serializer = AnLiSerializer(instance=obj, many=True, context=context)
-        # print(serializer.data)
-        data = {"code": 200, "data": serializer.data}
-        return Response(data)
+class AnLi(ListCreateAPIView):
+    serializer_class = AnLiSerializer
+    queryset = models.XingFuAnLi.objects.all()
+    pagination_class = CustomPagination
 
     def post(self, request):
         print(f"request.FILES:{request.FILES}")
@@ -51,11 +49,14 @@ class ImagesDetailView(APIView):
             raise Http404
 
     def get(self, request, pk, format=None):
-        context = {"request": request}
-        article = self.get_object(pk)
-        print(f"查找到所有的Image对象{article}")
-        serializer = ImagesSerializer(instance=article, context=context)
-        return Response(serializer.data)
+        # context = {"request": request}
+        # article = self.get_object(pk)
+        # print(f"查找到所有的Image对象{article}")
+        # serializer = ImagesSerializer(instance=article, context=context)
+        # return Response(serializer.data)
+        image_instance = self.get_object(pk)
+        image_url = image_instance.image.url
+        return HttpResponseRedirect(image_url)
 
 
 class AnLiCrawl(APIView):
@@ -75,7 +76,10 @@ class AnLiCrawl(APIView):
             # print(item.get('id'))
             # 检查id是否已存在
             if not models.XingFuAnLi.objects.filter(_id=item.get('id')).exists():
-                # 创建处 avatar和imgurl的对象
+                # 创建除 avatar和imgurl的对象
+                date_string = item.get('addtime')
+                date_object = datetime.strptime(date_string, "%Y-%m-%d").date()
+
                 obj = models.XingFuAnLi.objects.create(
                     _id=item.get('id'),
                     comment_num=item.get('comment_num'),
@@ -85,7 +89,7 @@ class AnLiCrawl(APIView):
                     content=item.get('content'),
                     hits=item.get('hits'),
                     commentlist=json.dumps(item.get('commentlist')),
-                    addtime=item.get('addtime'),
+                    addtime=date_object,
                     nickname=item.get('nickname'),
                 )
                 # 保存头像
@@ -94,7 +98,7 @@ class AnLiCrawl(APIView):
                 obj.avatar.name = os.path.basename(item.get('avatar'))
 
                 # 保存图片
-                if len(item.get('imgurl')) >0:
+                if len(item.get('imgurl')) > 0:
                     for img in item.get('imgurl'):
                         print(img)
                         img_content_file = get_remote_image_content_file(img)

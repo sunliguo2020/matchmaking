@@ -26,7 +26,8 @@ urlpatterns = [
     # url(r'^media/(?P<path>.*)$', serve, {"document_root": MEDIA_ROOT}),
     # re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/', include('apps.tuodan.urls'))
+    path('api/', include('apps.tuodan.urls')),
+    path('quickstart/',include('apps.quickstart.urls'))
 ]
 
 if settings.DEBUG:
