@@ -19,6 +19,14 @@
 				"navigationBarTitleText": "我们脱单了",
 				"enablePullDownRefresh": false
 			}
+		},
+		{
+			"path" : "pages/latest_updates/latest_updates",
+			"style" : 
+			{
+				"navigationBarTitleText" : "动态",
+				"enablePullDownRefresh" : false
+			}
 		}
 	],
 	"globalStyle": {
