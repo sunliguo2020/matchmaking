@@ -31,3 +31,14 @@ class Users(models.Model):
     class Meta:
         verbose_name = '会员信息'
         verbose_name_plural = verbose_name
+
+    def save(self, *args, **kwargs):
+        # 判断头像文件是否已经存在
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # 在删除模型对象之前删除文件
+        if self.avatarURL:
+            self.avatarURL.delete(save=False)
+            # 调用父类的delete方法完成实际的删除操作
+        super().delete(*args, **kwargs)

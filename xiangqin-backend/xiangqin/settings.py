@@ -150,6 +150,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # drf 分页
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_PAGINATION_CLASS': 'utils.CustomPagination.CustomPagination',
     'PAGE_SIZE': 10
 }
