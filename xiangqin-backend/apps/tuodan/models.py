@@ -33,5 +33,5 @@ class Images(models.Model):
     幸福案例中某个实例中要保存的图片。
 
     """
-    image = models.ImageField("图片", null=True, blank=True, upload_to='images/')
+    image = models.ImageField("图片", null=True, blank=True, upload_to='images/anli/')
     anliInfo = models.ForeignKey(XingFuAnLi, on_delete=models.CASCADE, related_name='imgurl')

@@ -27,13 +27,35 @@ class AnLi(ListCreateAPIView):
     pagination_class = CustomPagination
 
     def post(self, request):
+        """
+
+        :param request:
+        :return:
+        """
         print(f"request.FILES:{request.FILES}")
+        # request.FILES:<MultiValueDict: {
+        # 'avatar':[<InMemoryUploadedFile: 2024-01-28_181414.png (image/png)>],
+        # 'imgurl': [<InMemoryUploadedFile: accessKeyCode.jpg (image/jpeg)>,
+        # <InMemoryUploadedFile: 10964343-efdfe0e040e3526f.webp (image/webp)>]}>
         print(f"request.data:{request.data}")
+        # request.data:<QueryDict: {
+        # '_id': ['500'],
+        # 'comment_num': ['121'],
+        # 'title': ['sdf'],
+        # 'content': ['2232'],
+        # 'hits': ['22'],
+        # 'commentlist': ['2'],
+        # 'nickname': ['红娘'],
+        # 'avatar': [<InMemoryUploadedFile: 2024-01-28_181414.png (image/png)>],
+        # 'imgurl': [<InMemoryUploadedFile: accessKeyCode.jpg (image/jpeg)>,
+        # <InMemoryUploadedFile: 10964343-efdfe0e040e3526f.webp (image/webp)>]}>
+
+        # HyperlinkedRelatedField 需要 context
         serializer = AnLiSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             print(f"serializer.validated_data:{serializer.validated_data}")
             serializer.save()
-            return Response({"code": 200, "data": serializer.data, "msg": "插入成功!"})
+            return Response({"code": 200, "data": serializer.data, "msg": "新增数据成功!"})
         else:
             error_data = {"code": 402, "data": "", "msg": serializer.errors}
 

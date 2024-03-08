@@ -39,10 +39,16 @@ class AnLiSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        """
+        自定义新增模型类实例的方法
+
+        :param validated_data:
+        :return:
+        """
         print(f'validated_data:{validated_data}')
 
         # validated_data 现在包含 imgurl 字段，它是一个 InMemoryUploadedFile 对象
-        image_data = validated_data.pop('imgurl', [])
+        # image_data = validated_data.pop('imgurl', [])
         # 保存除imgulr之外的数据
         s_obj = models.XingFuAnLi.objects.create(**validated_data)
 
@@ -53,4 +59,8 @@ class AnLiSerializer(serializers.ModelSerializer):
         print(f"imgrul 所有的值：{image_data.getlist('imgurl')}")
         for ele in image_data.getlist('imgurl'):
             models.Images.objects.create(anliInfo=s_obj, image=ele)
+
         return s_obj
+
+    def update(self, instance, validated_data):
+        pass

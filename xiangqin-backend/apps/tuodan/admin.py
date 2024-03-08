@@ -9,10 +9,10 @@ from . import models
 @admin.register(models.XingFuAnLi)
 class XingFuAnLiAdmin(admin.ModelAdmin):
     list_display = ['id', '_id', 'title', 'content', 'avatar_tag', 'imgurl']
-
+    list_per_page = 10
     def avatar_tag(self, obj):
         """
-        显示头像列
+        显示头像列图片
         :param obj:
         :return:
         """
@@ -39,4 +39,11 @@ class XingFuAnLiAdmin(admin.ModelAdmin):
 
 @admin.register(models.Images)
 class AnliImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'image', 'anliInfo']
+    list_display = ['id', 'image_tag', 'anliInfo']
+    list_per_page = 10
+
+    def image_tag(self, obj):
+        if obj.image:
+            return format_html(f'<img src="{obj.image.url}" width="100" height="100"/>')
+        else:
+            return ""
