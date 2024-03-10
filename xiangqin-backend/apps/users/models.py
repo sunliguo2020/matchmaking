@@ -1,9 +1,10 @@
+from django.core.files.storage import default_storage
 from django.db import models
 
 
 # Create your models here.
 class Users(models.Model):
-    _id = models.IntegerField()
+    _id = models.IntegerField('ID', unique=True)
     age = models.CharField('年龄', max_length=10)
     height = models.CharField('身高', max_length=10)
     weight = models.CharField('体重', max_length=10)
@@ -36,9 +37,266 @@ class Users(models.Model):
         # 判断头像文件是否已经存在
         super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, using=None, keep_parents=False):
+        """
+
+        :param using:
+        :param keep_parents:
+        """
         # 在删除模型对象之前删除文件
-        if self.avatarURL:
-            self.avatarURL.delete(save=False)
-            # 调用父类的delete方法完成实际的删除操作
-        super().delete(*args, **kwargs)
+        # 删除ImageField关联的文件
+        image_path = self.avatarURL.path
+        print(f'avatarURL文件{image_path}')
+        if default_storage.exists(image_path):
+            default_storage.delete(image_path)
+        # if self.avatarURL:
+        #     print('准备删除头像文件')
+        #     self.avatarURL.delete(save=False)
+        #     # 调用父类的delete方法完成实际的删除操作
+        super().delete(using=None, keep_parents=False)
+
+    def __str__(self):
+        return self.nickname
+
+
+class UserProfile(models.Model):
+    """
+    {
+    "nickname": "桃",
+    "showValidateIDCardFlag": 0,
+    "workCityString": "潍坊市",
+    "age": 25,
+    "gender": 2,
+    "isedu": 0,
+    "iscar": 0,
+    "ishouse": 0,
+    "isvip": 1,
+    "iscard": 1,
+    "BasicInfo": [
+        [
+            "出生年月",
+            "1999-3"
+        ],
+        [
+            "身高",
+            "167cm"
+        ],
+        [
+            "体重",
+            "48Kg"
+        ],
+        [
+            "学历",
+            "本科"
+        ],
+        [
+            "婚姻状况",
+            "未婚"
+        ],
+        [
+            "户籍地",
+            "山东省,潍坊市,寿光市,稻田镇"
+        ],
+        [
+            "现居地址",
+            "山东省,潍坊市,寿光市,圣城街道"
+        ],
+        [
+            "买房情况",
+            "和家人同住"
+        ],
+        [
+            "买车情况",
+            "未买车"
+        ],
+        [
+            "何时结婚",
+            "时机成熟就结婚"
+        ]
+    ],
+    "DetailInfo": [
+        [
+            "职业",
+            "教师"
+        ],
+        [
+            "月收入",
+            "5千~8千"
+        ]
+    ],
+    "ObjectInfo": [
+        [
+            "年龄",
+            "24-27岁"
+        ],
+        [
+            "身高",
+            "175cm以上"
+        ],
+        [
+            "学历",
+            "本科及以上"
+        ],
+        [
+            "婚姻状况",
+            "仅限未婚"
+        ],
+        [
+            "月收入",
+            "5千以上"
+        ],
+        [
+            "是否接受对方有小孩",
+            "不接受"
+        ]
+    ],
+    "memberID": 1179833,
+    "vnums": 0,
+    "showinfo": 1,
+    "mate": "",
+    "f_text": [
+        "慢热",
+        "真诚靠谱",
+        "善解人意"
+    ],
+    "pull_nums": 0,
+    "imkey": 0,
+    "revenue_type": 1,
+    "ismeet": 0,
+    "userlimit": 0,
+    "basic": {
+        "addtime_text": "",
+        "updatatime_text": "",
+        "height": "167cm",
+        "weight": "48Kg",
+        "edu": "本科",
+        "marriage": "未婚",
+        "hometown_name": "山东省,潍坊市,寿光市,稻田镇",
+        "house": "和家人同住",
+        "studyabroad": "教师",
+        "revenue": "5千~8千"
+    },
+    "basicInfo": [
+        "1999-3",
+        "山东省,潍坊市,寿光市,稻田镇",
+        "山东省,潍坊市,寿光市,圣城街道"
+    ],
+    "tag_true": [
+        "整洁干净",
+        "有责任心",
+        "孝敬父母",
+        "懂得尊重",
+        "不冷暴力"
+    ],
+    "thumb": [],
+    "avatarURL": {
+        "b": "https://x96-img.xindongyun.cn/h5u1179833dd6a482023012510390328828wnax7k.jpg",
+        "m": "https://x96-img.xindongyun.cn/h5u1179833dd6a482023012510390328828wnax7k.jpg?imageView2/1/w/300/h/366/q/85"
+    },
+    "giftCount": 3,
+    "gift": [
+        {
+            "giftID": 1540,
+            "giftIcon": "http://img2.inke.cn/MTQ5ODQ3NTk3NzEyMSM5MDgjanBn.jpg",
+            "giftName": "守护之心",
+            "giftPrice": 1,
+            "isFree": false,
+            "isNew": false,
+            "num": 1
+        },
+        {
+            "giftID": 1539,
+            "giftIcon": "http://img2.inke.cn/MTUwMDQ2NjY4NjA4MSMxNjQjanBn.jpg",
+            "giftName": "玛莎拉蒂",
+            "giftPrice": 88,
+            "isFree": false,
+            "isNew": false,
+            "num": 1
+        },
+        {
+            "giftID": 1533,
+            "giftIcon": "http://img2.inke.cn/MTUxMzA0NjgyMTA1OSM2OTMjanBn.jpg",
+            "giftName": "浪漫秋千",
+            "giftPrice": 58,
+            "isFree": false,
+            "isNew": false,
+            "num": 1
+        }
+    ],
+    "isFollowing": false,
+    "userinfo": {
+        "memberID": 0,
+        "is_card": 0,
+        "vipid": 0,
+        "viptime": 0,
+        "imkey": 0,
+        "goldNum": 0,
+        "sex": 0,
+        "ischeck": 4,
+        "isedu": 0,
+        "iscar": 0,
+        "ishouse": 0
+    },
+    "hn": [],
+    "userinfocheck": {
+        "basic_check": 0,
+        "want_check": 0
+    },
+    "client": 7,
+    "seo": {
+        "title": "167cm 48Kg 本科 未婚",
+        "description": "寿光相亲网，寿光本地真实靠谱相亲平台！只征婚不交友！",
+        "keywords": "潍然心动·寿光相亲网",
+        "imgUrl": "https://x96-img.xindongyun.cn/h5u1179833dd6a482023012510390328828wnax7k.jpg?imageView2/1/w/200/q/85"
+    },
+    "isfull": false,
+    "step": 1
+}
+    """
+
+    nickname = models.CharField('昵称', max_length=50)
+    showValidateIDCardFlag = models.SmallIntegerField(default=0)
+    workCityString = models.CharField('工作城市', max_length=50)
+    age = models.IntegerField('年龄')
+    gender = models.SmallIntegerField()
+    isedu = models.SmallIntegerField()
+    iscar = models.SmallIntegerField()
+    ishouse = models.SmallIntegerField()
+    isvip = models.SmallIntegerField()
+    iscard = models.SmallIntegerField()
+    BasicInfo = models.CharField('详细资料', max_length=200)
+    DetailInfo = models.CharField('其他资料', max_length=100)
+    ObjectInfo = models.CharField('择偶标准', max_length=200)
+    # memberID = models.OneToOneField(to=Users, on_delete=models.CASCADE, to_field="_id")
+    vnums = models.SmallIntegerField()
+    showinfo = models.SmallIntegerField()
+    mate = models.CharField(max_length=100)
+    # 我的性格
+    f_text = models.CharField('兴趣爱好', max_length=100)
+    pull_nums = models.SmallIntegerField()
+    imkey = models.SmallIntegerField()
+    revenue_type = models.SmallIntegerField()
+    ismeet = models.SmallIntegerField()
+    userlimit = models.SmallIntegerField()
+    basic = models.JSONField()
+    basicInfo2 = models.CharField(max_length=100)
+    tag_true = models.CharField('理想中的TA', max_length=100)
+    thumb = models.CharField(max_length=100)
+    avatarURL = models.JSONField()
+    giftCount = models.IntegerField('礼物数')
+    gift = models.CharField(max_length=100)
+    isFollowing = models.BooleanField()
+    userinfo = models.JSONField()
+    hn = models.CharField(max_length=100)
+    userinfocheck = models.JSONField()
+    client = models.IntegerField()
+    seo = models.JSONField()
+    isfull = models.BooleanField()
+    step = models.IntegerField()
+
+    class Meta:
+        verbose_name = '会员详情'
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.nickname

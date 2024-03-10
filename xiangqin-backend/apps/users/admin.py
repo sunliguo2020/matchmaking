@@ -8,11 +8,13 @@ from . import models
 
 @admin.register(models.Users)
 class UsersAdminModelAdmin(admin.ModelAdmin):
-    list_display = ['_id', 'nickname', 'age', 'education', 'jobs_title', 'avatar']
+    list_display = ['id', '_id', 'nickname', 'age', 'education', 'jobs_title', 'avatar']
     list_per_page = 10
     # list_filter = ['education']
     search_fields = ['_id', 'nickname', 'jobs_title']
-    sortable_by = ['age']
+    sortable_by = ['id', 'age']
+    readonly_fields = ['_id']
+    ordering = ['-updatetime', '_id']
 
     def avatar(self, obj):
         if obj.avatarURL:

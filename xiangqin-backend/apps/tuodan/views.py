@@ -28,7 +28,7 @@ class AnLi(ListCreateAPIView):
 
     def post(self, request):
         """
-
+        重写post方法，返回自定义Response
         :param request:
         :return:
         """
