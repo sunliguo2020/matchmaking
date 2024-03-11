@@ -12,7 +12,8 @@ from utils.tools import get_remote_image_content_file
 from . import models
 from .serializers import UserSerializer
 
-from crawl_data.getUsers import getUsersByPage
+from crawl_data.getUsers import getUsersByPage,getUserOrderByNew
+from crawl_data.getObjectProfile import getObjectProfile
 
 
 # Create your views here.
@@ -31,7 +32,8 @@ class UsersCrawl(APIView):
         """
         page = request.query_params.get('page', 1)
 
-        result = getUsersByPage(page)
+        # 判断查询方式 orderby  vip real new 和空
+        result = getUserOrderByNew(page)
 
         if result.get('code') == 200:
             data = result.get('data').get('list')
@@ -43,14 +45,14 @@ class UsersCrawl(APIView):
         for _item in data:
             item = {}
             item.update(_item)
-            print(str(item).encode('utf-8'))
+            # print(str(item).encode('utf-8'))
             # 先处理该对象的格式：
-            print(f'开始处理update属性值:{item.get("updatetime")}')
-
-            print('先处理成日期格式', datetime.datetime.fromtimestamp(item.get('updatetime')))
+            # print(f'开始处理update属性值:{item.get("updatetime")}')
+            #
+            # print('先处理成日期格式', datetime.datetime.fromtimestamp(item.get('updatetime')))
             aware_datetime = timezone.make_aware(datetime.datetime.fromtimestamp(item.get('updatetime')),
                                                  timezone.get_default_timezone())
-            print(f'带时区:{aware_datetime}')
+            # print(f'带时区:{aware_datetime}')
             item['updatetime'] = aware_datetime
 
             # 再更新几个特殊的字段
@@ -94,3 +96,39 @@ class UsersCrawl(APIView):
                     # old_obj.save()
 
         return Response({'data': result})
+
+
+class UserProfileCrawl(APIView):
+    def get(self, request, id, *args, **kwargs):
+        # print(id, args, kwargs)
+        # id = request.query_params.get('id', '')
+        profile = {}
+        if id:
+            profile = getObjectProfile(id)
+            if profile.get('code', '') == 200:
+                _data = profile.get('data', '')
+                print(_data)
+                data = {}
+                data.update(_data)
+
+                user_obj = models.Users.objects.get(_id=_data.get('memberID'))
+
+                data['memberID'] = user_obj
+                data['BasicInfo'] = json.dumps(_data.get('BasicInfo'), ensure_ascii=False)
+                data['DetailInfo'] = json.dumps(_data.get('DetailInfo'), ensure_ascii=False)
+                data['ObjectInfo'] = json.dumps(_data.get('ObjectInfo'), ensure_ascii=False)
+                data['f_text'] = json.dumps(_data.get('f_text'), ensure_ascii=False)
+                data['basic'] = json.dumps(_data.get('basic'), ensure_ascii=False)
+                data['basicInfo2'] = json.dumps(_data.get('basicInfo'), ensure_ascii=False)
+                data.pop('basicInfo')
+                data['tag_true'] = json.dumps(_data.get('tag_true'), ensure_ascii=False)
+                data['gift'] = json.dumps(_data.get('gift'), ensure_ascii=False)
+
+                print(data)
+                if not models.UsersProfile.objects.filter(memberID=user_obj).exists():
+                    # 创建新属性
+                    new_obj = models.UsersProfile.objects.create(**data)
+                    print(new_obj)
+
+        # return Response(json.dumps(data))
+        return Response(profile)

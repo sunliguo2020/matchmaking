@@ -11,7 +11,7 @@ from crawl_data.getHeaders import getHeaders
 
 def getUsersByPage(page):
     """
-    采集用户信息，并保存到数据库中
+    采集用户信息，并返回
     :param page: 页码
     :return:
     """
@@ -21,6 +21,23 @@ def getUsersByPage(page):
         'actiontype': 'member',
         'page': page,
         'is_count': '0',
+    }
+
+    response = requests.get('https://www.sgjhw.com/pc/love/listrecommend',
+                            params=params,
+                            headers=headers)
+
+    return response.json()
+
+
+def getUserOrderByNew(page):
+    headers = getHeaders()
+
+    params = {
+        'actiontype': 'member',
+        'page': page,
+        'is_count': '0',  # 是否返回总数
+        'orderBy': 'new'
     }
 
     response = requests.get('https://www.sgjhw.com/pc/love/listrecommend',

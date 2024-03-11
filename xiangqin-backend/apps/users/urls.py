@@ -14,5 +14,5 @@ from . import views
 urlpatterns = [
     path('list/', views.UsersListCreateAPIView.as_view(), name='users_list'),
     path('crawl/', views.UsersCrawl.as_view(), name='users_crawl'),
-
+    path('getprofile/<int:id>/', views.UserProfileCrawl.as_view(), name='get_user_profile')
 ]

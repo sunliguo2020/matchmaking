@@ -59,9 +59,9 @@ class Users(models.Model):
         return self.nickname
 
 
-class UserProfile(models.Model):
+class UsersProfile(models.Model):
     """
-    {
+{
     "nickname": "桃",
     "showValidateIDCardFlag": 0,
     "workCityString": "潍坊市",
@@ -252,7 +252,7 @@ class UserProfile(models.Model):
     "isfull": false,
     "step": 1
 }
-    """
+"""
 
     nickname = models.CharField('昵称', max_length=50)
     showValidateIDCardFlag = models.SmallIntegerField(default=0)
@@ -267,7 +267,7 @@ class UserProfile(models.Model):
     BasicInfo = models.CharField('详细资料', max_length=200)
     DetailInfo = models.CharField('其他资料', max_length=100)
     ObjectInfo = models.CharField('择偶标准', max_length=200)
-    # memberID = models.OneToOneField(to=Users, on_delete=models.CASCADE, to_field="_id")
+    memberID = models.OneToOneField(to=Users, on_delete=models.CASCADE)
     vnums = models.SmallIntegerField()
     showinfo = models.SmallIntegerField()
     mate = models.CharField(max_length=100)
