@@ -4,7 +4,10 @@ from django.db import models
 
 # Create your models here.
 class Users(models.Model):
-    _id = models.IntegerField('ID', unique=True)
+    """
+    会员基本信息
+    """
+    user_id = models.IntegerField('user_id', unique=True)
     age = models.CharField('年龄', max_length=10)
     height = models.CharField('身高', max_length=10)
     weight = models.CharField('体重', max_length=10)
@@ -60,6 +63,9 @@ class Users(models.Model):
 
 
 class UsersProfile(models.Model):
+    """
+    会员详细信息
+    """
     """
 {
     "nickname": "桃",
@@ -267,6 +273,7 @@ class UsersProfile(models.Model):
     BasicInfo = models.CharField('详细资料', max_length=200)
     DetailInfo = models.CharField('其他资料', max_length=100)
     ObjectInfo = models.CharField('择偶标准', max_length=200)
+    # 关联Users主键
     memberID = models.OneToOneField(to=Users, on_delete=models.CASCADE)
     vnums = models.SmallIntegerField()
     showinfo = models.SmallIntegerField()
@@ -281,8 +288,9 @@ class UsersProfile(models.Model):
     basic = models.JSONField()
     basicInfo2 = models.CharField(max_length=100)
     tag_true = models.CharField('理想中的TA', max_length=100)
+    # 个人照片原始地址
     thumb = models.CharField(max_length=100)
-    avatarURL = models.JSONField()
+    avatarURL = models.JSONField('头像')
     giftCount = models.IntegerField('礼物数')
     gift = models.CharField(max_length=100)
     isFollowing = models.BooleanField()
@@ -300,3 +308,16 @@ class UsersProfile(models.Model):
 
     def __str__(self):
         return self.nickname
+
+
+class UserProfilePhoto(models.Model):
+    """
+    保存用户上传的照片
+    来自于UsersProfile中的thumb字段
+    """
+    image = models.ImageField("图片", null=True, blank=True, upload_to='images/user_photo/')
+    user = models.ForeignKey(to=UsersProfile, on_delete=models.CASCADE, to_field='memberID')
+
+    class Meta:
+        verbose_name = '会员相册'
+        verbose_name_plural = verbose_name

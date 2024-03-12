@@ -12,7 +12,7 @@ from utils.tools import get_remote_image_content_file
 from . import models
 from .serializers import UserSerializer
 
-from crawl_data.getUsers import getUsersByPage,getUserOrderByNew
+from crawl_data.getUsers import getUsersByPage, getUserOrderByNew
 from crawl_data.getObjectProfile import getObjectProfile
 
 
@@ -60,14 +60,14 @@ class UsersCrawl(APIView):
             item['f_text'] = json.dumps(item.get('f_text'), ensure_ascii=False)
             item['infoStatus'] = json.dumps(item.get('infoStatus'), ensure_ascii=False)
 
-            # id修改为_id
-            item['_id'] = item.pop('id')
+            # id修改为user_id
+            item['user_id'] = item.pop('id')
             # 删除avatarURL
             item.pop('avatarURL')
             print(f'最后item的值:{str(item).encode("utf-8")}')
 
             # 检查id是否已存在
-            if not models.Users.objects.filter(_id=item.get('_id')).exists():
+            if not models.Users.objects.filter(user_id=item.get('user_id')).exists():
 
                 obj = models.Users.objects.create(**item)
                 # 保存头像 下载大图
@@ -87,13 +87,11 @@ class UsersCrawl(APIView):
                 if should_update:
                     print('开始更新对象')
                     # 先找到该对象
-                    old_obj = models.Users.objects.filter(_id=item.get('_id'))
+                    old_obj = models.Users.objects.filter(user_id=item.get('user_id'))
                     #
                     # # 更新该对象
                     update_count = old_obj.update(**item)
                     print(f'更新条数{update_count}')
-                    # # 保存
-                    # old_obj.save()
 
         return Response({'data': result})
 
@@ -107,11 +105,11 @@ class UserProfileCrawl(APIView):
             profile = getObjectProfile(id)
             if profile.get('code', '') == 200:
                 _data = profile.get('data', '')
-                print(_data)
+                print(f"获取到的原始数据：{json.dumps(_data)}")
                 data = {}
                 data.update(_data)
 
-                user_obj = models.Users.objects.get(_id=_data.get('memberID'))
+                user_obj = models.Users.objects.get(user_id=_data.get('memberID'))
 
                 data['memberID'] = user_obj
                 data['BasicInfo'] = json.dumps(_data.get('BasicInfo'), ensure_ascii=False)
@@ -124,11 +122,28 @@ class UserProfileCrawl(APIView):
                 data['tag_true'] = json.dumps(_data.get('tag_true'), ensure_ascii=False)
                 data['gift'] = json.dumps(_data.get('gift'), ensure_ascii=False)
 
-                print(data)
+                print(f"整理好的数据:{data}")
+
                 if not models.UsersProfile.objects.filter(memberID=user_obj).exists():
                     # 创建新属性
                     new_obj = models.UsersProfile.objects.create(**data)
-                    print(new_obj)
+                    print(f"新建用户信息：{new_obj},照片信息：{new_obj.thumb}")
 
-        # return Response(json.dumps(data))
+                    # 检查是否有照片
+                    if new_obj.thumb and not models.UserProfilePhoto.objects.filter(user=new_obj).exists():
+                        print(f'抓取到照片，但照片对象不存在')
+                        for img in new_obj.thumb:
+                            img = img.get('b')
+                            img_content_file = get_remote_image_content_file(img)
+                            image_obj = models.UserProfilePhoto.objects.create(user=new_obj)
+                            image_obj.image = img_content_file
+                            image_obj.image.name = os.path.basename(img)
+
+                            image_obj.save()
+                            print(f'新建对象：{image_obj}')
+                else:
+                    print(f"已经存在!检查照片是否已经下载")
+                    exist_obj = models.UsersProfile.objects.filter(memberID=user_obj)
+                    # 检查thumb是否有数据，有则检查图片是否已经下载？
+
         return Response(profile)

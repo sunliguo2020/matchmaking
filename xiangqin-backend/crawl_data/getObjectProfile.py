@@ -11,6 +11,11 @@ from crawl_data.getHeaders import getHeaders
 
 
 def getObjectProfile(id):
+    """
+
+    :param id:
+    :return:
+    """
     params = {
         'actiontype': 'member',
         'id': id,
