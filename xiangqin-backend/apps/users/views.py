@@ -48,7 +48,6 @@ class UsersCrawl(APIView):
             # print(str(item).encode('utf-8'))
             # 先处理该对象的格式：
             # print(f'开始处理update属性值:{item.get("updatetime")}')
-            #
             # print('先处理成日期格式', datetime.datetime.fromtimestamp(item.get('updatetime')))
             aware_datetime = timezone.make_aware(datetime.datetime.fromtimestamp(item.get('updatetime')),
                                                  timezone.get_default_timezone())
@@ -64,10 +63,11 @@ class UsersCrawl(APIView):
             item['user_id'] = item.pop('id')
             # 删除avatarURL
             item.pop('avatarURL')
-            print(f'最后item的值:{str(item).encode("utf-8")}')
+            # print(f'最后item的值:{str(item).encode("utf-8")}')
 
             # 检查id是否已存在
             if not models.Users.objects.filter(user_id=item.get('user_id')).exists():
+                print(f'b不存在，准备插入')
 
                 obj = models.Users.objects.create(**item)
                 # 保存头像 下载大图
@@ -97,53 +97,72 @@ class UsersCrawl(APIView):
 
 
 class UserProfileCrawl(APIView):
+    """
+    采集用户详情
+    """
+
     def get(self, request, id, *args, **kwargs):
         # print(id, args, kwargs)
         # id = request.query_params.get('id', '')
         profile = {}
-        if id:
-            profile = getObjectProfile(id)
-            if profile.get('code', '') == 200:
-                _data = profile.get('data', '')
-                print(f"获取到的原始数据：{json.dumps(_data)}")
-                data = {}
-                data.update(_data)
+        if not id:
+            return Response({'code': 400, 'msg': '没有传入有效的id'})
 
-                user_obj = models.Users.objects.get(user_id=_data.get('memberID'))
+        user_obj = models.Users.objects.get(user_id=id)
+        if not user_obj:
+            return Response({'code': 500, 'msg': f'没有查询到{id}用户'})
 
-                data['memberID'] = user_obj
-                data['BasicInfo'] = json.dumps(_data.get('BasicInfo'), ensure_ascii=False)
-                data['DetailInfo'] = json.dumps(_data.get('DetailInfo'), ensure_ascii=False)
-                data['ObjectInfo'] = json.dumps(_data.get('ObjectInfo'), ensure_ascii=False)
-                data['f_text'] = json.dumps(_data.get('f_text'), ensure_ascii=False)
-                data['basic'] = json.dumps(_data.get('basic'), ensure_ascii=False)
-                data['basicInfo2'] = json.dumps(_data.get('basicInfo'), ensure_ascii=False)
-                data.pop('basicInfo')
-                data['tag_true'] = json.dumps(_data.get('tag_true'), ensure_ascii=False)
-                data['gift'] = json.dumps(_data.get('gift'), ensure_ascii=False)
+        # 获取详情
+        profile = getObjectProfile(id)
+        # 获取到有效数据
+        if profile.get('code', '') == 200:
+            _data = profile.get('data', '')
+            print(f"获取到的原始数据：{json.dumps(_data, ensure_ascii=False)}")
+            data = {}
+            data.update(_data)
 
-                print(f"整理好的数据:{data}")
+            # 整理数据
+            data['memberID'] = user_obj
+            data['BasicInfo'] = json.dumps(_data.get('BasicInfo'), ensure_ascii=False)
+            data['DetailInfo'] = json.dumps(_data.get('DetailInfo'), ensure_ascii=False)
+            data['ObjectInfo'] = json.dumps(_data.get('ObjectInfo'), ensure_ascii=False)
+            data['f_text'] = json.dumps(_data.get('f_text'), ensure_ascii=False)
+            data['basic'] = json.dumps(_data.get('basic'), ensure_ascii=False)
+            data['basicInfo2'] = json.dumps(_data.get('basicInfo'), ensure_ascii=False)
+            data.pop('basicInfo')
+            data['tag_true'] = json.dumps(_data.get('tag_true'), ensure_ascii=False)
+            data['gift'] = json.dumps(_data.get('gift'), ensure_ascii=False)
 
-                if not models.UsersProfile.objects.filter(memberID=user_obj).exists():
-                    # 创建新属性
-                    new_obj = models.UsersProfile.objects.create(**data)
-                    print(f"新建用户信息：{new_obj},照片信息：{new_obj.thumb}")
+            print(f"整理好的数据:{data}")
 
-                    # 检查是否有照片
-                    if new_obj.thumb and not models.UserProfilePhoto.objects.filter(user=new_obj).exists():
-                        print(f'抓取到照片，但照片对象不存在')
-                        for img in new_obj.thumb:
-                            img = img.get('b')
-                            img_content_file = get_remote_image_content_file(img)
-                            image_obj = models.UserProfilePhoto.objects.create(user=new_obj)
-                            image_obj.image = img_content_file
-                            image_obj.image.name = os.path.basename(img)
+            if not models.UsersProfile.objects.filter(memberID=user_obj).exists():
+                # 创建新用户详情
+                new_obj = models.UsersProfile.objects.create(**data)
+                print(f"新建用户信息：{new_obj},照片信息：{new_obj.thumb}")
 
-                            image_obj.save()
-                            print(f'新建对象：{image_obj}')
+                # 检查是否有照片
+                if new_obj.thumb and not models.UserProfilePhoto.objects.filter(user=new_obj).exists():
+                    print(f'抓取到照片，但照片对象不存在')
+                    for img in new_obj.thumb:
+                        img = img.get('b')
+                        img_content_file = get_remote_image_content_file(img)
+                        image_obj = models.UserProfilePhoto.objects.create(user=new_obj)
+                        image_obj.image = img_content_file
+                        image_obj.image.name = os.path.basename(img)
+
+                        image_obj.save()
+                        print(f'新建对象：{image_obj}')
                 else:
-                    print(f"已经存在!检查照片是否已经下载")
+                    print(f"照片对象已经存在!检查照片是否已经下载")
                     exist_obj = models.UsersProfile.objects.filter(memberID=user_obj)
                     # 检查thumb是否有数据，有则检查图片是否已经下载？
+            else:
+                print(f'用户详情{models.UsersProfile.objects.filter(memberID=user_obj)}已经存在')
+                return Response({'code': 201, 'msg': '用户详情已经存在'})
 
-        return Response(profile)
+            return Response({'code': 200, 'data': '', 'msg': '成功保存数据'})
+
+        else:
+            return Response({'code': profile.get('code', '500'),
+                             'msg': '采集发生错误，原始数据见data!',
+                             'data': profile})

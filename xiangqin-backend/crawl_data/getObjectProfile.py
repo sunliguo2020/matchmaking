@@ -12,7 +12,7 @@ from crawl_data.getHeaders import getHeaders
 
 def getObjectProfile(id):
     """
-
+    获取用户详情
     :param id:
     :return:
     """

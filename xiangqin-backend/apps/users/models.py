@@ -7,7 +7,7 @@ class Users(models.Model):
     """
     会员基本信息
     """
-    user_id = models.IntegerField('user_id', unique=True)
+    user_id = models.IntegerField('用户ID', unique=True)
     age = models.CharField('年龄', max_length=10)
     height = models.CharField('身高', max_length=10)
     weight = models.CharField('体重', max_length=10)
@@ -316,8 +316,11 @@ class UserProfilePhoto(models.Model):
     来自于UsersProfile中的thumb字段
     """
     image = models.ImageField("图片", null=True, blank=True, upload_to='images/user_photo/')
-    user = models.ForeignKey(to=UsersProfile, on_delete=models.CASCADE, to_field='memberID')
+    userprofile = models.ForeignKey(to=UsersProfile, on_delete=models.CASCADE, to_field='memberID')
 
     class Meta:
         verbose_name = '会员相册'
         verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.userprofile.nickname + self.image.name

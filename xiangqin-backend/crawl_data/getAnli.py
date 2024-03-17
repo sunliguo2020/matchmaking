@@ -4,39 +4,26 @@
  @Author : sunliguo
  @Email : sunliguo2006@qq.com
 """
-import json
-
 import requests
 
-from crawl_data.hashtoken import header_hashtoken
-
-hashtoken_data = header_hashtoken()
-
-headers = {
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Pragma': 'no-cache',
-    'Referer': 'https://www.sgjhw.com/web/case/',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
-    'hashtoken': hashtoken_data,
-    'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Microsoft Edge";v="122"',
-    'sec-ch-ua-mobile': '?0',
-    'sec-ch-ua-platform': '"Windows"',
-}
+from crawl_data.getHeaders import getHeaders
 
 
-def getAnliByPage(page):
+def getAnliByPage(page=1):
+    """
+    获取幸福案例
+    :param page:
+    :return:
+    """
+    url = 'https://www.sgjhw.com/pc/love/tuodan'
     params = {
         'actiontype': 'tuodan',
         'page': page,
     }
 
-    response = requests.get('https://www.sgjhw.com/pc/love/tuodan', params=params, headers=headers)
+    response = requests.get(url,
+                            params=params,
+                            headers=getHeaders())
     # print(type(response.json()['data']['list'][0]))
     dict_data = response.json()
     # print(json.dumps(dict_data, ensure_ascii=False))
@@ -44,4 +31,4 @@ def getAnliByPage(page):
 
 
 if __name__ == '__main__':
-    print(getAnliByPage(1))
+    print(getAnliByPage())
