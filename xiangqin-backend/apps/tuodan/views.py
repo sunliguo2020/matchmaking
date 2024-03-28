@@ -1,21 +1,18 @@
-from datetime import datetime
 import json
 import os.path
+from datetime import datetime
 
-from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import render
-from django.views import View
-from rest_framework import serializers, status
-from rest_framework.generics import ListAPIView, ListCreateAPIView
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.views import APIView
+from django.http import Http404, HttpResponseRedirect
+from rest_framework import status
+from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
-from . import models
-from .serializers import AnLiSerializer, ImagesSerializer
+from rest_framework.views import APIView
 
 from crawl_data.getAnli import getAnliByPage
-from utils.tools import get_remote_image_content_file
 from utils.CustomPagination import CustomPagination
+from utils.tools import get_remote_image_content_file
+from . import models
+from .serializers import AnLiSerializer
 
 
 # Create your views here.
@@ -82,10 +79,17 @@ class ImagesDetailView(APIView):
 
 
 class AnLiCrawl(APIView):
+    """
+    采集幸福案例
+    """
+
     def get(self, request):
+        """
+         根据page 采集幸福案例
+        """
         page = request.query_params.get('page', 1)
         result = getAnliByPage(page)
-
+        print(f'采集到的案例原始数据:{result}')
         if result.get('code') == 200:
             data = result.get('data').get('list')
         else:
@@ -134,4 +138,5 @@ class AnLiCrawl(APIView):
 
             else:
                 print(f'已经存在')
-        return Response({'data': result})
+
+        return Response({'data': result, 'msg': 'ok'})

@@ -4,8 +4,8 @@
  @Author : sunliguo
  @Email : sunliguo2006@qq.com
 """
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
+
 from . import views
 
 urlpatterns = [
