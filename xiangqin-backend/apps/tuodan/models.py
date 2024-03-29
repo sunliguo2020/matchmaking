@@ -1,8 +1,6 @@
 from django.db import models
 from datetime import date
-
-# from apps.images.models import Images
-
+from comm.db import BaseModel
 
 # Create your models here.
 
@@ -23,15 +21,20 @@ class XingFuAnLi(models.Model):
     class Meta:
         verbose_name = '幸福案例'
         verbose_name_plural = verbose_name
+        ordering = ['-addtime']
         
     def __str__(self):
         return str(self.id)
 
 
-class Images(models.Model):
+class Images(BaseModel):
     """
     幸福案例中某个实例中要保存的图片。
 
     """
     image = models.ImageField("图片", null=True, blank=True, upload_to='images/anli/')
     anliInfo = models.ForeignKey(XingFuAnLi, on_delete=models.CASCADE, related_name='imgurl')
+
+    class Meta:
+        verbose_name = '幸福案例图片'
+        verbose_name_plural = verbose_name
