@@ -4,6 +4,9 @@
  @Author : sunliguo
  @Email : sunliguo2006@qq.com
 """
+import pprint
+
+import jsonpath
 import requests
 
 from crawl_data.getHeaders import getHeaders
@@ -24,11 +27,15 @@ def getAnliByPage(page=1):
     response = requests.get(url,
                             params=params,
                             headers=getHeaders())
-    # print(type(response.json()['data']['list'][0]))
     dict_data = response.json()
-    # print(json.dumps(dict_data, ensure_ascii=False))
+    # 获取案例数目
+    count = jsonpath.jsonpath(dict_data, '$..count')
+    if count:
+        count = count[0]
+        print(count)
+
     return dict_data
 
 
 if __name__ == '__main__':
-    print(getAnliByPage())
+    pprint.pp(getAnliByPage())

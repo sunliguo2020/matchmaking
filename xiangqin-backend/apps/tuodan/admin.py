@@ -1,15 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-# Register your models here.
-
 from . import models
+
+
+# Register your models here.
 
 
 @admin.register(models.XingFuAnLi)
 class XingFuAnLiAdmin(admin.ModelAdmin):
     list_display = ['id', '_id', 'title', 'content', 'avatar_tag', 'imgurl']
     list_per_page = 10
+
     def avatar_tag(self, obj):
         """
         显示头像列图片
@@ -39,7 +41,7 @@ class XingFuAnLiAdmin(admin.ModelAdmin):
 
 @admin.register(models.Images)
 class AnliImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'image_tag', 'anliInfo']
+    list_display = ['id', 'image_tag', 'anliInfo', 'create_time', 'update_time']
     list_per_page = 10
 
     def image_tag(self, obj):
@@ -47,3 +49,5 @@ class AnliImageAdmin(admin.ModelAdmin):
             return format_html(f'<img src="{obj.image.url}" width="100" height="100"/>')
         else:
             return ""
+    image_tag.short_description = '图片'
+    image_tag.allow_tags = True

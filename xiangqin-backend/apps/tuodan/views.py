@@ -93,13 +93,13 @@ class AnLiCrawl(APIView):
         if result.get('code') == 200:
             data = result.get('data').get('list')
         else:
-            print('抓取失败')
+            print(f'抓取幸福案例失败:{result.get("code")}')
             return Response({'code': 400, "msg": '抓取失败', "data": result})
 
-        # 开始存入数据库中
+        # 开始将幸福案例存入数据库中
         for item in data:
-            print(item)
-            # print(item.get('id'))
+            print(f"遍历每一项{item}")
+
             # 检查id是否已存在
             if not models.XingFuAnLi.objects.filter(_id=item.get('id')).exists():
                 # 创建除 avatar和imgurl的对象
@@ -120,7 +120,7 @@ class AnLiCrawl(APIView):
                 )
                 # 保存头像
                 obj.avatar = get_remote_image_content_file(item.get('avatar'))
-                # 头像名
+                # 头像文件名
                 obj.avatar.name = os.path.basename(item.get('avatar'))
 
                 # 保存图片
