@@ -84,7 +84,7 @@ class UsersCrawl(APIView):
 
             # 检查id是否已存在
             if not models.Users.objects.filter(user_id=item.get('user_id')).exists():
-                print(f'b不存在，准备插入')
+                print(f'{item}不存在，准备插入')
 
                 obj = models.Users.objects.create(**item)
                 # 保存头像 下载大图

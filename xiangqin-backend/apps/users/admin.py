@@ -6,6 +6,7 @@ from django.utils.html import format_html
 
 from . import models
 
+
 # Register your models here.
 
 
@@ -22,12 +23,6 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
                     'avatar',
                     'getUserProfile',
                     'updatetime']
-    fieldsets = (
-        ('Group 1', {
-            'fields': ('user_id', 'age'),
-            'collapse': True,
-        }),
-    )
 
     list_per_page = 10
 
@@ -52,11 +47,11 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
             elif self.value() == "2":
                 return queryset.filter(gender=2).all()
 
-    list_filter = (GenderFilter, 'iscard','isvip')
+    list_filter = (GenderFilter, 'iscard', 'isvip')
     search_fields = ['user_id', 'nickname', 'jobs_title']
-    sortable_by = ['id', 'age']
+    sortable_by = ['id', 'age', 'updatetime']
     readonly_fields = ['user_id']
-    ordering = ['-id', '-updatetime', 'user_id']
+    ordering = ['-updatetime', 'user_id']
 
     def show_gender(self, obj):
         """
@@ -86,7 +81,11 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
         :return:
         """
         if obj.avatarURL:
-            return format_html(f'<img src="{obj.avatarURL.url}" width="50" height="50"/>')
+            return format_html(f'''
+            <a href="{obj.avatarURL.url}" target="blank"> 
+                <img src="{obj.avatarURL.url}" width="50" height="50"/>
+                </a>
+            ''')
         return ""
 
     avatar.short_description = '头像'
@@ -114,6 +113,7 @@ class UsersProfileModelAdmin(admin.ModelAdmin):
 @admin.register(models.UserProfilePhoto)
 class UserProfilePhotoModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'userprofile', 'user_image']
+    list_per_page =  10
 
     def user_image(self, obj):
         if obj.image:
