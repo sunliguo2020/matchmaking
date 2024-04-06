@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
+    'coreapi',
     'corsheaders',
     'apps.tuodan',
     'apps.users',
@@ -110,9 +112,8 @@ LANGUAGE_CODE = 'zh-hans'
 TIME_ZONE = 'Asia/Shanghai'
 
 DATE_FORMAT = 'Y/m/d'  # 设置日期格式为年/月/日
-TIME_FORMAT = 'H:i'    # 设置时间格式为小时:分钟
+TIME_FORMAT = 'H:i'  # 设置时间格式为小时:分钟
 DATETIME_FORMAT = 'Y/m/d H:i'  # 设置日期时间格式为年/月/日 小时:分钟
-
 
 USE_I18N = True
 
@@ -154,9 +155,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ORIGIN_ALLOW_ALL = True
 
 
-# drf 分页
+# drf 配置
 REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'DEFAULT_PAGINATION_CLASS': 'utils.CustomPagination.CustomPagination',
-    'PAGE_SIZE': 10
+    # 过滤器的默认设置
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'PAGE_SIZE': 10,
+    #  添加coreapi框架 否则会提示：AttributeError: 'AutoSchema' object has no attribute 'get_link'
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
 }

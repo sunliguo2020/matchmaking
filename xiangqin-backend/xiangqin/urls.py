@@ -17,11 +17,12 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.views.static import serve
+from rest_framework.documentation import include_docs_urls
 
 from xiangqin import settings
 
 urlpatterns = [
+    re_path(r'^docs/', include_docs_urls(title='接口文档')),
     path('admin/', admin.site.urls),
     # url(r'^media/(?P<path>.*)$', serve, {"document_root": MEDIA_ROOT}),
     # re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),

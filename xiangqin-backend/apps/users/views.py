@@ -2,25 +2,42 @@ import datetime
 import json
 import os
 
-from django.shortcuts import render
 from django.utils import timezone
-from rest_framework.generics import ListCreateAPIView
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from crawl_data.getObjectProfile import getObjectProfile
+from crawl_data.getUsers import getUserOrderByNew
 from utils.tools import get_remote_image_content_file
 from . import models
+from .filters import UserFilter
 from .serializers import UserSerializer
-
-from crawl_data.getUsers import getUsersByPage, getUserOrderByNew
-from crawl_data.getObjectProfile import getObjectProfile
 
 
 # Create your views here.
 
-class UsersListCreateAPIView(ListCreateAPIView):
+class UsersListAPIView(ListAPIView):
     queryset = models.Users.objects.all()
     serializer_class = UserSerializer
+
+    # 过滤
+    # filter_backends = (DjangoFilterBackend,)
+    #  方式一：指定过滤字段
+    filterset_fields = ('id', 'nickname', 'city')
+
+    # 方式二：指定过滤类
+    filterset_class = UserFilter
+
+    # 搜索
+    # filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    # search_fields = ('nickname', 'city')
+
+    # 排序
+    # filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    ordering_fields = ('id', 'nickname')
 
 
 class UsersCrawl(APIView):
@@ -107,9 +124,9 @@ class UserProfileCrawl(APIView):
         profile = {}
         if not id:
             return Response({'code': 400, 'msg': '没有传入有效的id'})
-
-        user_obj = models.Users.objects.get(user_id=id)
-        if not user_obj:
+        try:
+            user_obj = models.Users.objects.get(user_id=id)
+        except models.Users.DoesNotExist:
             return Response({'code': 500, 'msg': f'没有查询到{id}用户'})
 
         # 获取详情
@@ -160,7 +177,7 @@ class UserProfileCrawl(APIView):
                 print(f'用户详情{models.UsersProfile.objects.filter(memberID=user_obj)}已经存在')
                 return Response({'code': 201, 'msg': '用户详情已经存在'})
 
-            return Response({'code': 200, 'data': '', 'msg': '成功保存数据'})
+            return Response({'code': 200, 'data': profile, 'msg': '成功保存数据'})
 
         else:
             return Response({'code': profile.get('code', '500'),

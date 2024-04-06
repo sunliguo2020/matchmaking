@@ -20,7 +20,15 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
                     'jobs_title',
                     'iscard',
                     'avatar',
-                    'getUserProfile']
+                    'getUserProfile',
+                    'updatetime']
+    fieldsets = (
+        ('Group 1', {
+            'fields': ('user_id', 'age'),
+            'collapse': True,
+        }),
+    )
+
     list_per_page = 10
 
     class GenderFilter(admin.SimpleListFilter):

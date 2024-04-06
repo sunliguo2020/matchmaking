@@ -35,6 +35,7 @@ class Users(models.Model):
     class Meta:
         verbose_name = '会员信息'
         verbose_name_plural = verbose_name
+        ordering = ['-updatetime']
 
     def save(self, *args, **kwargs):
         # 判断头像文件是否已经存在
