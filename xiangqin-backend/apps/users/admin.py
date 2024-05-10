@@ -97,7 +97,7 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
 class UsersProfileModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'userID', "age", 'nickname', 'birthday']
     list_display_links = ['id', 'nickname']
-    search_fields = ['id', 'nickname']
+    search_fields = ['id', 'nickname', 'memberID__user_id']
 
     def userID(self, obj):
         if obj.memberID:
@@ -112,10 +112,15 @@ class UsersProfileModelAdmin(admin.ModelAdmin):
 
 @admin.register(models.UserProfilePhoto)
 class UserProfilePhotoModelAdmin(admin.ModelAdmin):
-    list_display = ['id', 'userprofile', 'user_image']
-    list_per_page =  10
+    list_display = ['id', 'user_id', 'userprofile', 'user_image']
+    list_per_page = 10
+    search_fields = ['id', 'userprofile__memberID__user_id']
 
     def user_image(self, obj):
         if obj.image:
             return format_html(f'<img src="{obj.image.url}" width="50" height="50"/>')
         return ""
+
+    def user_id(self, obj):
+        # print(obj)
+        return obj.userprofile.memberID.user_id

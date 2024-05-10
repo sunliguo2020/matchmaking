@@ -30,9 +30,10 @@ def getUsersByPage(page):
     return response.json()
 
 
-def getUserOrderByNew(page):
+def getUserOrderByNew(page, is_count=0):
     """
 
+    :param is_count: 当为1时显示总数
     :param page:
     :return:
     """
@@ -41,7 +42,7 @@ def getUserOrderByNew(page):
     params = {
         'actiontype': 'member',
         'page': page,
-        'is_count': '0',  # 是否返回总数
+        'is_count': is_count,  # 是否返回总数 1为返回总数，0返回详细
         'orderBy': 'new'
     }
 
