@@ -299,6 +299,14 @@ class UsersProfile(models.Model):
     seo = models.JSONField()
     isfull = models.BooleanField()
     step = models.IntegerField()
+    not_login_avatar_vague = models.CharField(max_length=200, blank=True, default='')
+    show_tip_text = models.CharField(max_length=200, blank=True, default='')
+    user_content = models.TextField(blank=True, default='')
+    want_content = models.TextField(blank=True, default='')
+    show_want = models.BooleanField(default=False)
+    show_ask = models.BooleanField(default=False)
+    is_my_answer = models.BooleanField(default=False)
+    ask_list = models.TextField(blank=True, default='')
 
     class Meta:
         verbose_name = '会员详情'

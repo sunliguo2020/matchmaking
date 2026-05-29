@@ -1,0 +1,399 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}一键采集管理{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .crawl-container {
+        padding: 20px;
+        max-width: 1200px;
+    }
+    .crawl-header {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .crawl-header h2 {
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .stat-card .stat-number {
+        font-size: 36px;
+        font-weight: bold;
+        color: #447e9b;
+    }
+    .stat-card .stat-label {
+        font-size: 14px;
+        color: #666;
+        margin-top: 8px;
+    }
+    .stat-card .stat-number.green { color: #28b389; }
+    .stat-card .stat-number.orange { color: #e67e22; }
+    .stat-card .stat-number.red { color: #e74c3c; }
+    .stat-card .stat-number.purple { color: #8e44ad; }
+    
+    .crawl-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .crawl-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+        color: #fff;
+        font-weight: 500;
+    }
+    .crawl-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    .crawl-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .crawl-btn.primary { background: #447e9b; }
+    .crawl-btn.success { background: #28b389; }
+    .crawl-btn.warning { background: #e67e22; }
+    .crawl-btn.danger { background: #e74c3c; }
+    .crawl-btn.info { background: #3498db; }
+    .crawl-btn.purple { background: #8e44ad; }
+    .crawl-btn.all { 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-size: 16px;
+        padding: 14px 32px;
+    }
+    
+    .crawl-status {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .crawl-status h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+    }
+    .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    .status-label {
+        font-weight: bold;
+        color: #555;
+        min-width: 80px;
+    }
+    .status-value {
+        color: #333;
+    }
+    .status-running {
+        color: #28b389;
+        font-weight: bold;
+    }
+    .status-idle {
+        color: #999;
+    }
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #eee;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    .progress-bar-inner {
+        height: 100%;
+        background: linear-gradient(90deg, #28b389, #447e9b);
+        border-radius: 4px;
+        transition: width 0.3s;
+        width: 0%;
+    }
+    .progress-bar-inner.running {
+        animation: progressPulse 2s infinite;
+    }
+    @keyframes progressPulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .crawl-log {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 13px;
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+    .crawl-log .log-entry {
+        padding: 2px 0;
+        line-height: 1.5;
+    }
+    .crawl-log .log-time {
+        color: #6a9955;
+    }
+    .crawl-log .log-info {
+        color: #d4d4d4;
+    }
+    .crawl-log .log-error {
+        color: #f44747;
+    }
+    .crawl-log .log-success {
+        color: #4ec9b0;
+    }
+    
+    .refresh-btn {
+        float: right;
+        padding: 6px 16px;
+        background: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .refresh-btn:hover {
+        background: #e0e0e0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="crawl-container">
+    <div class="crawl-header">
+        <h2>📊 数据采集管理</h2>
+        <p>在 Django Admin 后台一键采集相亲网站数据，支持后台异步执行。</p>
+    </div>
+    
+    <!-- 数据统计 -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.users_total }}</div>
+            <div class="stat-label">👤 会员总数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number green">{{ stats.users_with_profile }}</div>
+            <div class="stat-label">📋 有详细资料</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number orange">{{ stats.users_photos }}</div>
+            <div class="stat-label">🖼️ 相册照片</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number red">{{ stats.users_no_profile }}</div>
+            <div class="stat-label">⚠️ 缺少资料</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number purple">{{ stats.anli_total }}</div>
+            <div class="stat-label">💑 幸福案例</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.activity_total }}</div>
+            <div class="stat-label">🎉 相亲活动</div>
+        </div>
+    </div>
+    
+    <!-- 采集按钮 -->
+    <div class="crawl-buttons">
+        <button class="crawl-btn all" onclick="startCrawl('all')" id="btn-all">
+            🚀 一键采集全部
+        </button>
+        <button class="crawl-btn primary" onclick="startCrawl('users_menutype2')" id="btn-users_menutype2">
+            👤 推荐会员(menutype=2)
+        </button>
+        <button class="crawl-btn info" onclick="startCrawl('users_menutype3')" id="btn-users_menutype3">
+            👤 推荐会员(menutype=3)
+        </button>
+        <button class="crawl-btn success" onclick="startCrawl('users_maylove')" id="btn-users_maylove">
+            ❤️ 可能喜欢的人
+        </button>
+        <button class="crawl-btn warning" onclick="startCrawl('users_profiles')" id="btn-users_profiles">
+            📋 用户详情和相册
+        </button>
+        <button class="crawl-btn purple" onclick="startCrawl('anli')" id="btn-anli">
+            💑 幸福案例
+        </button>
+        <button class="crawl-btn danger" onclick="startCrawl('activity')" id="btn-activity">
+            🎉 相亲活动
+        </button>
+    </div>
+    
+    <!-- 采集状态 -->
+    <div class="crawl-status">
+        <h3>📈 采集状态</h3>
+        <div class="status-bar">
+            <span class="status-label">状态:</span>
+            <span id="status-text" class="status-value status-idle">空闲</span>
+        </div>
+        <div class="status-bar">
+            <span class="status-label">任务:</span>
+            <span id="task-text" class="status-value">-</span>
+        </div>
+        <div class="status-bar">
+            <span class="status-label">进度:</span>
+            <span id="progress-text" class="status-value">-</span>
+        </div>
+        <div class="progress-bar">
+            <div id="progress-bar" class="progress-bar-inner"></div>
+        </div>
+    </div>
+    
+    <!-- 采集日志 -->
+    <div class="crawl-status">
+        <h3>
+            📝 采集日志
+            <button class="refresh-btn" onclick="refreshStatus()">🔄 刷新</button>
+            <button class="refresh-btn" onclick="clearLog()" style="margin-right:8px;">🗑️ 清空</button>
+        </h3>
+        <div id="crawl-log" class="crawl-log">
+            <div class="log-entry">等待采集任务...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+let refreshTimer = null;
+
+function startCrawl(taskType) {
+    // 禁用所有按钮
+    document.querySelectorAll('.crawl-btn').forEach(btn => btn.disabled = true);
+    
+    fetch('/admin/crawl/start/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: 'task_type=' + taskType
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.code === 200) {
+            addLog('✅ ' + data.msg);
+            // 开始轮询状态
+            if (refreshTimer) clearInterval(refreshTimer);
+            refreshTimer = setInterval(refreshStatus, 2000);
+            refreshStatus();
+        } else {
+            addLog('❌ ' + data.msg);
+            document.querySelectorAll('.crawl-btn').forEach(btn => btn.disabled = false);
+        }
+    })
+    .catch(e => {
+        addLog('❌ 请求失败: ' + e);
+        document.querySelectorAll('.crawl-btn').forEach(btn => btn.disabled = false);
+    });
+}
+
+function refreshStatus() {
+    fetch('/admin/crawl/status/')
+    .then(r => r.json())
+    .then(data => {
+        if (data.code === 200) {
+            const status = data.data;
+            const running = status.running;
+            
+            // 更新状态显示
+            const statusText = document.getElementById('status-text');
+            if (running) {
+                statusText.textContent = '🔄 运行中';
+                statusText.className = 'status-value status-running';
+            } else {
+                statusText.textContent = '⏸️ 空闲';
+                statusText.className = 'status-value status-idle';
+            }
+            
+            document.getElementById('task-text').textContent = status.current_task || '-';
+            document.getElementById('progress-text').textContent = status.progress || '-';
+            
+            // 进度条动画
+            const bar = document.getElementById('progress-bar');
+            if (running) {
+                bar.classList.add('running');
+                bar.style.width = '60%';
+            } else {
+                bar.classList.remove('running');
+                bar.style.width = '0%';
+            }
+            
+            // 更新日志
+            const logDiv = document.getElementById('crawl-log');
+            if (status.log && status.log.length > 0) {
+                logDiv.innerHTML = status.log.map(msg => {
+                    let cls = 'log-info';
+                    if (msg.includes('❌') || msg.includes('失败')) cls = 'log-error';
+                    if (msg.includes('✅') || msg.includes('完成')) cls = 'log-success';
+                    return `<div class="log-entry ${cls}">${escapeHtml(msg)}</div>`;
+                }).join('');
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+            
+            // 如果任务完成，停止轮询并启用按钮
+            if (!running && refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+                document.querySelectorAll('.crawl-btn').forEach(btn => btn.disabled = false);
+            }
+        }
+    })
+    .catch(e => {
+        console.error('刷新状态失败:', e);
+    });
+}
+
+function addLog(msg) {
+    const logDiv = document.getElementById('crawl-log');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry log-info';
+    entry.textContent = msg;
+    logDiv.appendChild(entry);
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function clearLog() {
+    document.getElementById('crawl-log').innerHTML = '<div class="log-entry">日志已清空</div>';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 页面加载时检查状态
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStatus();
+});
+</script>
+{% endblock %}

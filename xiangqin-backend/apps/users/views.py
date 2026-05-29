@@ -9,6 +9,7 @@ from rest_framework.generics import ListCreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from crawl_data.getHeaders import getHeaders
 from crawl_data.getObjectProfile import getObjectProfile
 from crawl_data.getUsers import getUserOrderByNew, getUsersByPage
 from utils.tools import get_remote_image_content_file
@@ -23,18 +24,10 @@ class UsersListAPIView(ListAPIView):
     queryset = models.Users.objects.all()
     serializer_class = UserSerializer
 
-    # 过滤
-    filterset_fields = ('id', 'user_id', 'nickname', 'city')
-
-    # 方式二：指定过滤类
+    # 过滤 - 使用自定义FilterSet支持gender和city过滤
     filterset_class = UserFilter
 
-    # 搜索
-    # filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    # search_fields = ('nickname', 'city')
-
     # 排序
-    # filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     ordering_fields = ('id', 'nickname')
 
 
@@ -62,6 +55,28 @@ class UserPhotosAPIView(APIView):
 
 
 class UsersCrawl(APIView):
+    """
+    采集推荐会员列表
+    
+    从相亲网站采集推荐会员数据并存入本地数据库。
+    
+    ### 请求参数:
+    - **page** (int, 可选): 页码，默认1
+    - **menutype** (int, 可选): 推荐分类，2=推荐会员, 3=推荐会员
+    - **lasttime** (int, 可选): 时间戳，用于翻页采集更早的数据。
+      翻页方式：用当前页中最小updatetime作为下一页的lasttime
+    - **orderby** (str, 可选): 排序方式，'new'=按最新排序
+    - **update** (str, 可选): 是否更新已存在的用户，'true'=更新
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "msg": "采集完成: 新增 X 条, 更新 X 条, 跳过 X 条",
+      "data": {"total": 10, "created": 5, "updated": 0, "skipped": 5}
+    }
+    ```
+    """
     def get(self, request):
         """
         抓取某页的用户信息
@@ -74,11 +89,14 @@ class UsersCrawl(APIView):
 
         # 判断查询方式: orderby=new 按最新排序, 其他或不传按默认排序
         orderby = request.query_params.get('orderby', 'default')
+        menutype = request.query_params.get('menutype')
+        lasttime = request.query_params.get('lasttime')
+        print(f'[DEBUG] UsersCrawl: page={page}, menutype={menutype}, lasttime={lasttime}')
         try:
             if orderby == 'new':
                 result = getUserOrderByNew(page)
             else:
-                result = getUsersByPage(page)
+                result = getUsersByPage(page, menutype=menutype, lasttime=lasttime)
         except Exception as e:
             return Response({'code': 500, "msg": f'请求采集接口失败: {e}', "data": None})
 
@@ -116,6 +134,11 @@ class UsersCrawl(APIView):
             item['user_id'] = item.pop('id')
             # 删除avatarURL（单独处理）
             item.pop('avatarURL', None)
+            # 删除Users模型中不存在的字段（menutype=3接口返回的额外字段）
+            extra_fields = ['list_tip_text', 'not_login_avatar_vague', 'sex', 'house', 'house_title',
+                           'revenue_title', 'jobs_id', 'jobs', 'photolist', 'is_show_meet']
+            for field in extra_fields:
+                item.pop(field, None)
 
             user_id = item.get('user_id')
             if not user_id:
@@ -165,6 +188,20 @@ class UsersCrawl(APIView):
 class UserProfileCrawl(APIView):
     """
     采集用户详情
+    
+    从相亲网站采集指定用户的详细资料（包括基本资料、详细资料、择偶要求等）和相册照片。
+    
+    ### 请求参数:
+    - **id** (int, 路径参数, 必填): 用户ID
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "data": {...},
+      "msg": "成功保存数据"
+    }
+    ```
     """
 
     def _parse_thumb_images(self, thumb_data):
@@ -224,7 +261,7 @@ class UserProfileCrawl(APIView):
         if profile.get('code') != 200:
             return Response({
                 'code': profile.get('code', 500),
-                'msg': '采集发生错误',
+                'msg': f'采集失败: {profile.get("data", "未知错误")}',
                 'data': profile
             })
 
@@ -272,3 +309,204 @@ class UserProfileCrawl(APIView):
                 'msg': f'保存用户详情失败: {e}',
                 'data': str(e)
             })
+
+
+class CrawlStatsAPIView(APIView):
+    """
+    爬取接口统计
+    
+    汇总所有爬取接口的统计数据，包括会员总数、幸福案例数、活动数等。
+    
+    ### 请求参数:
+    无
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "data": {
+        "users": {"total": 30, "with_profile": 5, "photos": 20, "latest_update": "..."},
+        "anli": {"total": 133, "latest_update": "..."},
+        "activity": {"total": 25},
+        "crawl_interfaces": [...]
+      },
+      "msg": "success"
+    }
+    ```
+    """
+    def get(self, request):
+        from apps.tuodan.models import XingFuAnLi, Activity
+        
+        # 用户相关统计
+        total_users = models.Users.objects.count()
+        users_with_profile = models.UsersProfile.objects.count()
+        total_photos = models.UserProfilePhoto.objects.count()
+        
+        # 幸福案例统计
+        total_anli = XingFuAnLi.objects.count()
+        
+        # 活动统计
+        total_activity = Activity.objects.count()
+        
+        # 获取最新数据时间
+        latest_user = models.Users.objects.order_by('-updatetime').first()
+        latest_anli = XingFuAnLi.objects.order_by('-addtime').first()
+        
+        return Response({
+            'code': 200,
+            'data': {
+                'users': {
+                    'total': total_users,
+                    'with_profile': users_with_profile,
+                    'photos': total_photos,
+                    'latest_update': latest_user.updatetime if latest_user else None,
+                },
+                'anli': {
+                    'total': total_anli,
+                    'latest_update': str(latest_anli.addtime) if latest_anli else None,
+                },
+                'activity': {
+                    'total': total_activity,
+                },
+                'crawl_interfaces': [
+                    {
+                        'name': '推荐会员',
+                        'url': '/api/users/crawl/',
+                        'params': 'page, menutype(2/3), lasttime, orderby(new)',
+                        'description': '采集推荐会员列表，支持menutype=2/3分类，支持lasttime翻页'
+                    },
+                    {
+                        'name': '可能喜欢的人',
+                        'url': '/api/users/maylove/',
+                        'params': 'pagenum',
+                        'description': '采集"可能喜欢的人"推荐会员'
+                    },
+                    {
+                        'name': '用户详情',
+                        'url': '/api/users/getprofile/<id>/',
+                        'params': 'id (路径参数)',
+                        'description': '采集指定用户的详细资料和相册'
+                    },
+                    {
+                        'name': '幸福案例',
+                        'url': '/api/tuodan/crawl/',
+                        'params': 'page',
+                        'description': '采集幸福案例列表'
+                    },
+                    {
+                        'name': '相亲活动',
+                        'url': '/api/tuodan/activity/',
+                        'params': 'page, pagenum',
+                        'description': '采集相亲活动列表'
+                    },
+                ]
+            },
+            'msg': 'success'
+        })
+
+
+class MayLoveCrawl(APIView):
+    """
+    采集"可能喜欢的人"推荐会员
+    
+    从相亲网站采集"可能喜欢的人"推荐会员数据并存入本地数据库。
+    
+    ### 请求参数:
+    - **pagenum** (int, 可选): 采集数量，默认20
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "msg": "采集完成: 新增 X 条, 跳过 X 条",
+      "data": {"total": 20, "created": 4, "skipped": 16}
+    }
+    ```
+    """
+    def get(self, request):
+        import requests as req
+        pagenum = request.query_params.get('pagenum', 20)
+        try:
+            pagenum = int(pagenum)
+        except (ValueError, TypeError):
+            pagenum = 20
+
+        try:
+            headers = getHeaders()
+            resp = req.get(
+                'https://www.sgjhw.com/pc/love/may_love',
+                params={'actiontype': 'mayLove', 'pagenum': pagenum},
+                headers=headers
+            )
+            result = resp.json()
+        except Exception as e:
+            return Response({'code': 500, "msg": f'请求may_love接口失败: {e}', "data": None})
+
+        if result.get('code') != 200:
+            return Response({'code': 400, "msg": '抓取失败', "data": result})
+
+        data = result.get('data', [])
+        if not data:
+            return Response({'code': 200, "msg": '没有数据', "data": result})
+
+        stats = {'total': len(data), 'created': 0, 'skipped': 0}
+
+        for item in data:
+            user_id = item.get('id')
+            if not user_id:
+                continue
+
+            if models.Users.objects.filter(user_id=user_id).exists():
+                stats['skipped'] += 1
+                continue
+
+            try:
+                user_obj = models.Users(
+                    user_id=user_id,
+                    nickname=item.get('nickname', ''),
+                    gender=item.get('sex', 0),
+                    jobs_title=item.get('jobs_title', ''),
+                    city_name=item.get('city_name', ''),
+                    age=item.get('age', ''),
+                    # 以下为必填字段，提供默认值
+                    height='',
+                    weight='',
+                    city='',
+                    education='',
+                    marriage='',
+                    objectID=user_id,
+                    online=0,
+                    hometown_name='',
+                    flagList='[]',
+                    isvip=0,
+                    iscard=0,
+                    f_text='',
+                    updatetime=timezone.now(),
+                    infoStatus='',
+                    placedtop=0,
+                    revenue='',
+                    ismeet=0,
+                )
+                # 下载头像
+                avatar_url = item.get('avatar', '')
+                if avatar_url:
+                    avatar_new_url = avatar_url.split('?')[0]
+                    try:
+                        avatar_file = get_remote_image_content_file(avatar_new_url)
+                        if avatar_file:
+                            user_obj.avatarURL = avatar_file
+                            user_obj.avatarURL.name = os.path.basename(avatar_new_url)
+                    except Exception as e:
+                        print(f'下载头像失败 [{avatar_new_url}]: {e}')
+
+                user_obj.save()
+                stats['created'] += 1
+            except Exception as e:
+                print(f'创建用户失败 [user_id={user_id}]: {e}')
+                stats['skipped'] += 1
+
+        return Response({
+            'code': 200,
+            'msg': f'采集完成: 新增 {stats["created"]} 条, 跳过 {stats["skipped"]} 条',
+            'data': stats
+        })

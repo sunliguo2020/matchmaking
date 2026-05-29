@@ -32,3 +32,11 @@ export function apiUserPhotos(data ={}) {
 		data
 	});
 };
+
+export function apiActivity(data ={}) {
+	return request({
+		url: "http://127.0.0.1:8000/api/tuodan/activity/list/",
+		method: 'GET',
+		data
+	});
+};

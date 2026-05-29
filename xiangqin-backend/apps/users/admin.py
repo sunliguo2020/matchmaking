@@ -1,10 +1,11 @@
 import json
 
 from django.contrib import admin
-from django.urls import reverse
+from django.urls import reverse, path
 from django.utils.html import format_html
 
 from . import models
+from . import admin_views
 
 
 # Register your models here.
@@ -22,6 +23,7 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
                     'iscard',
                     'avatar',
                     'getUserProfile',
+                    'crawl_link',
                     'updatetime']
 
     list_per_page = 10
@@ -88,6 +90,13 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
             ''')
         return ""
 
+    def crawl_link(self, obj):
+        """
+        采集管理链接
+        """
+        return format_html('<a href="/admin/crawl/" target="_blank">📊 采集管理</a>')
+
+    crawl_link.short_description = '采集'
     avatar.short_description = '头像'
     getUserProfile.short_description = '详情'
     show_gender.short_description = '性别'

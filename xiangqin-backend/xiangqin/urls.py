@@ -20,9 +20,14 @@ from django.urls import path, include, re_path
 from rest_framework.documentation import include_docs_urls
 
 from xiangqin import settings
+from apps.users import admin_views
 
 urlpatterns = [
     re_path(r'^docs/', include_docs_urls(title='接口文档')),
+    # Admin 自定义视图 - 一键采集管理（必须在 admin.site.urls 之前）
+    path('admin/crawl/', admin_views.crawl_dashboard, name='admin_crawl_dashboard'),
+    path('admin/crawl/start/', admin_views.crawl_start, name='admin_crawl_start'),
+    path('admin/crawl/status/', admin_views.crawl_status_view, name='admin_crawl_status'),
     path('admin/', admin.site.urls),
     # url(r'^media/(?P<path>.*)$', serve, {"document_root": MEDIA_ROOT}),
     # re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),

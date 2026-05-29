@@ -9,10 +9,12 @@ import requests
 from crawl_data.getHeaders import getHeaders
 
 
-def getUsersByPage(page):
+def getUsersByPage(page, menutype=None, lasttime=None):
     """
     采集用户信息，并返回
     :param page: 页码
+    :param menutype: 推荐分类（2=推荐会员, 3=推荐会员）
+    :param lasttime: 上一页返回的lasttime时间戳，用于翻页
     :return:
     """
     headers = getHeaders()
@@ -22,6 +24,10 @@ def getUsersByPage(page):
         'page': page,
         'is_count': '0',
     }
+    if menutype is not None:
+        params['menutype'] = menutype
+    if lasttime is not None:
+        params['lasttime'] = lasttime
 
     response = requests.get('https://www.sgjhw.com/pc/love/listrecommend',
                             params=params,

@@ -15,5 +15,7 @@ urlpatterns = [
     path('list/', views.UsersListAPIView.as_view(), name='users_list'),
     path('crawl/', views.UsersCrawl.as_view(), name='users_crawl'),
     path('getprofile/<int:id>/', views.UserProfileCrawl.as_view(), name='get_user_profile'),
-    path('photos/', views.UserPhotosAPIView.as_view(), name='user_photos')
+    path('photos/', views.UserPhotosAPIView.as_view(), name='user_photos'),
+    path('maylove/', views.MayLoveCrawl.as_view(), name='may_love_crawl'),
+    path('crawl/stats/', views.CrawlStatsAPIView.as_view(), name='crawl_stats')
 ]

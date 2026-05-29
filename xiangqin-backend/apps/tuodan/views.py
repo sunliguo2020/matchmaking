@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.http import Http404, HttpResponseRedirect
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,7 +12,7 @@ from crawl_data.getAnli import getAnliByPage
 from utils.CustomPagination import CustomPagination
 from utils.tools import get_remote_image_content_file
 from . import models
-from .serializers import AnLiSerializer
+from .serializers import ActivitySerializer, AnLiSerializer
 
 
 # Create your views here.
@@ -81,6 +81,20 @@ class ImagesDetailView(APIView):
 class AnLiCrawl(APIView):
     """
     采集幸福案例
+    
+    从相亲网站采集幸福案例数据并存入本地数据库。
+    
+    ### 请求参数:
+    - **page** (int, 可选): 页码，默认1
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "msg": "采集完成: 成功 X 条, 跳过 X 条, 失败 X 条",
+      "data": {"total": 10, "success": 5, "skipped": 5, "failed": 0}
+    }
+    ```
     """
 
     def _parse_date(self, date_string):
@@ -209,5 +223,114 @@ class AnLiCrawl(APIView):
         return Response({
             'code': 200,
             'msg': f'采集完成: 成功 {stats["success"]} 条, 跳过 {stats["skipped"]} 条, 失败 {stats["failed"]} 条',
+            'data': stats
+        })
+
+
+class ActivityList(ListAPIView):
+    """
+    获取活动列表
+    """
+    serializer_class = ActivitySerializer
+    queryset = models.Activity.objects.all()
+    pagination_class = CustomPagination
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'code': 200, 'data': serializer.data})
+
+
+class ActivityCrawl(APIView):
+    """
+    采集相亲活动
+    
+    从相亲网站采集相亲活动数据并存入本地数据库。
+    
+    ### 请求参数:
+    - **page** (int, 可选): 页码，默认1
+    - **pagenum** (int, 可选): 每页数量，默认5
+    
+    ### 返回数据:
+    ```json
+    {
+      "code": 200,
+      "msg": "采集完成: 新增 X 条, 跳过 X 条",
+      "data": {"total": 5, "created": 3, "skipped": 2}
+    }
+    ```
+    """
+    def get(self, request):
+        import requests as req
+        from crawl_data.getHeaders import getHeaders
+
+        page = request.query_params.get('page', 1)
+        pagenum = request.query_params.get('pagenum', 5)
+        try:
+            page = int(page)
+            pagenum = int(pagenum)
+        except (ValueError, TypeError):
+            page = 1
+            pagenum = 5
+
+        try:
+            headers = getHeaders()
+            resp = req.get(
+                'https://www.sgjhw.com/pc/love/act_list_903',
+                params={'actiontype': 'act_list_903', 'page': page, 'pagenum': pagenum},
+                headers=headers
+            )
+            result = resp.json()
+        except Exception as e:
+            return Response({'code': 500, "msg": f'请求活动列表接口失败: {e}', "data": None})
+
+        if result.get('code') != 200:
+            return Response({'code': 400, "msg": '抓取失败', "data": result})
+
+        data = result.get('data', {}).get('list', [])
+        if not data:
+            return Response({'code': 200, "msg": '该页没有数据', "data": result})
+
+        stats = {'total': len(data), 'created': 0, 'skipped': 0}
+
+        for item in data:
+            aid = item.get('aid')
+            if not aid:
+                continue
+
+            if models.Activity.objects.filter(aid=aid).exists():
+                stats['skipped'] += 1
+                continue
+
+            try:
+                models.Activity.objects.create(
+                    aid=aid,
+                    title=item.get('title', ''),
+                    address=item.get('address', ''),
+                    cover_img=item.get('cover_img', ''),
+                    big_img=item.get('big_img', ''),
+                    date_desc=item.get('date_desc', ''),
+                    date_act=item.get('date_act', ''),
+                    price=item.get('price', ''),
+                    vip_price=item.get('vip_price', ''),
+                    money_sex1=item.get('money_sex1', ''),
+                    money_sex2=item.get('money_sex2', ''),
+                    location=item.get('location', ''),
+                    is_over=bool(item.get('is_over', False)),
+                    over_content=item.get('over_content', ''),
+                )
+                stats['created'] += 1
+            except Exception as e:
+                print(f'创建活动失败 [aid={aid}]: {e}')
+                stats['skipped'] += 1
+
+        return Response({
+            'code': 200,
+            'msg': f'采集完成: 新增 {stats["created"]} 条, 跳过 {stats["skipped"]} 条',
             'data': stats
         })

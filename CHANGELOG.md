@@ -2,6 +2,25 @@
 
 ## 项目更新日志
 
+### 2026-05-30
+
+- **新增**：Django Admin 一键采集管理页面（`/admin/crawl/`），支持后台异步执行所有采集任务
+- **新增**：采集管理页面实时日志输出、进度显示、数据统计卡片
+- **新增**：Admin 会员列表页添加"📊 采集管理"快捷入口链接
+- **修复**：Admin 自定义路由 404 问题，将自定义路由放在 `admin.site.urls` 之前
+- **修复**：Admin 采集页面 NoReverseMatch 错误，模板中改用硬编码路径
+- **修复**：用户详情采集失败时错误信息不明确，改为显示具体失败原因
+- **新增**：支持 `menutype=2` 推荐会员接口采集（新增 5 条）
+- **新增**：支持 `menutype=3` 推荐会员接口采集（新增 10 条）
+- **新增**：支持 `lasttime` 参数翻页采集更早的会员数据
+- **新增**：爬取接口统计 API（`/api/users/crawl/stats/`）
+- **新增**：为所有爬取接口添加详细文档说明，在 `/docs/` 页面中展示
+- **新增**：爬虫代码 `crawl_menutype2.py` 支持 `lasttime` 参数
+- **修复**：`crawl_menutype2.py` 中的 typo（`updatetimees` → `updatetimees`）
+- **新增**：UsersProfile 模型添加 8 个新字段（ask_list, is_my_answer, is_my_flower, is_my_gift, is_my_visit, is_my_like, is_my_black, is_my_follow）
+- **新增**：批量采集会员相册，成功采集 1148 条详细资料
+- **修复**：会员页性别和城市搜索过滤功能
+
 ### 2026-05-29
 
 - **修复**：幸福案例 API 地址错误（`/api/anli/` → `/api/tuodan/anli/`）

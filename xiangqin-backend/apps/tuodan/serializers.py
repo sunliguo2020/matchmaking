@@ -59,3 +59,9 @@ class AnLiSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         pass
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Activity
+        fields = '__all__'

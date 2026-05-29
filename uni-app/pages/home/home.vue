@@ -1,5 +1,28 @@
 <template>
 	<view class="container">
+		<!-- 相亲活动区域 -->
+		<view class="section-title">
+			<text class="section-title-text">🔥 相亲活动</text>
+			<text class="section-more" @click="viewAllActivities">查看全部</text>
+		</view>
+		<scroll-view class="activity-scroll" scroll-x v-if="activityList.length > 0">
+			<view class="activity-list">
+				<view v-for="item in activityList" :key="item.aid" class="activity-card" @click="goToActivity(item.aid)">
+					<image class="activity-cover" :src="item.cover_img" mode="aspectFill"></image>
+					<view class="activity-info">
+						<text class="activity-title">{{item.title}}</text>
+						<text class="activity-date">{{item.date_desc}}</text>
+						<text class="activity-address">{{item.address}}</text>
+						<text class="activity-price" v-if="item.price && item.price != '0'">¥{{item.price}}</text>
+						<text class="activity-price free" v-else>免费</text>
+					</view>
+				</view>
+			</view>
+		</scroll-view>
+		<view v-else class="activity-empty">
+			<text>暂无活动</text>
+		</view>
+
 		<view class="search-bar">
 			<input class="search-input" v-model="keyword" placeholder="搜索昵称或ID..." @confirm="searchUsers" />
 			<button class="search-btn" @click="searchUsers">搜索</button>
@@ -56,13 +79,14 @@
 
 <script setup>
 	import { ref, onMounted } from "vue"
-	import { apiUsers } from "@/api/apis.js"
+	import { apiUsers, apiActivity } from "@/api/apis.js"
 	
 	const memberList = ref([]);
 	const currentPage = ref(1);
 	const total = ref(0);
 	const loading = ref(false);
 	const keyword = ref('');
+	const activityList = ref([]);
 	
 	const genderOptions = ['全部', '男', '女'];
 	const genderText = ref('性别');
@@ -104,6 +128,18 @@
 		}
 	};
 	
+	const getActivities = async () => {
+		try {
+			let res = await apiActivity({page: 1, size: 10});
+			console.log('活动列表:', res);
+			if (res.code === 200) {
+				activityList.value = res.data || [];
+			}
+		} catch(e) {
+			console.error('获取活动列表失败:', e);
+		}
+	};
+	
 	const searchUsers = () => {
 		currentPage.value = 1;
 		getUsers({page: 1});
@@ -136,8 +172,21 @@
 		});
 	};
 	
+	const goToActivity = (aid) => {
+		uni.navigateTo({
+			url: `/pages/activity/activity?id=${aid}`
+		});
+	};
+	
+	const viewAllActivities = () => {
+		uni.switchTab({
+			url: '/pages/xingFuAnLi/xingFuAnLi'
+		});
+	};
+	
 	onMounted(() => {
 		getUsers();
+		getActivities();
 	});
 </script>
 
@@ -187,6 +236,98 @@
 			font-size: 24rpx;
 			color: #666;
 		}
+	}
+	
+	.section-title {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20rpx;
+		
+		.section-title-text {
+			font-size: 32rpx;
+			font-weight: bold;
+			color: #333;
+		}
+		
+		.section-more {
+			font-size: 24rpx;
+			color: #28b389;
+		}
+	}
+	
+	.activity-scroll {
+		white-space: nowrap;
+		margin-bottom: 30rpx;
+		
+		.activity-list {
+			display: flex;
+			gap: 20rpx;
+			
+			.activity-card {
+				width: 400rpx;
+				background: #fff;
+				border-radius: 16rpx;
+				overflow: hidden;
+				box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.08);
+				display: inline-block;
+				flex-shrink: 0;
+				
+				.activity-cover {
+					width: 100%;
+					height: 200rpx;
+				}
+				
+				.activity-info {
+					padding: 16rpx;
+					
+					.activity-title {
+						font-size: 26rpx;
+						font-weight: bold;
+						color: #333;
+						display: block;
+						white-space: nowrap;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+					
+					.activity-date {
+						font-size: 22rpx;
+						color: #999;
+						display: block;
+						margin-top: 8rpx;
+					}
+					
+					.activity-address {
+						font-size: 22rpx;
+						color: #999;
+						display: block;
+					}
+					
+					.activity-price {
+						font-size: 28rpx;
+						color: #f12711;
+						font-weight: bold;
+						display: block;
+						margin-top: 8rpx;
+						
+						&.free {
+							color: #28b389;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	.activity-empty {
+		text-align: center;
+		padding: 40rpx 0;
+		color: #999;
+		font-size: 26rpx;
+		margin-bottom: 30rpx;
+		background: #fff;
+		border-radius: 16rpx;
 	}
 	
 	.loading, .empty {
