@@ -41,24 +41,19 @@ class AnLiSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         自定义新增模型类实例的方法
-
-        :param validated_data:
-        :return:
         """
-        print(f'validated_data:{validated_data}')
+        # 从 validated_data 中移除 imgurl（它是只读的 HyperlinkedRelatedField）
+        validated_data.pop('imgurl', None)
 
-        # validated_data 现在包含 imgurl 字段，它是一个 InMemoryUploadedFile 对象
-        # image_data = validated_data.pop('imgurl', [])
-        # 保存除imgulr之外的数据
+        # 保存案例主对象
         s_obj = models.XingFuAnLi.objects.create(**validated_data)
 
-        print(f'self.context:{self._context}')
-        image_data = self._context.get('request').FILES
-        # 上传的所有图片信息
-        print(f"imgrul 最新值：{image_data}")
-        print(f"imgrul 所有的值：{image_data.getlist('imgurl')}")
-        for ele in image_data.getlist('imgurl'):
-            models.Images.objects.create(anliInfo=s_obj, image=ele)
+        # 从请求中获取上传的图片文件
+        request = self.context.get('request')
+        if request and request.FILES:
+            image_data = request.FILES
+            for ele in image_data.getlist('imgurl'):
+                models.Images.objects.create(anliInfo=s_obj, image=ele)
 
         return s_obj
 

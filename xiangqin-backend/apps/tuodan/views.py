@@ -83,60 +83,131 @@ class AnLiCrawl(APIView):
     采集幸福案例
     """
 
+    def _parse_date(self, date_string):
+        """安全解析日期字符串"""
+        if not date_string:
+            return datetime.now().date()
+        try:
+            return datetime.strptime(date_string, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            try:
+                return datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S").date()
+            except (ValueError, TypeError):
+                return datetime.now().date()
+
+    def _download_image(self, url):
+        """下载远程图片，失败时返回 None"""
+        if not url:
+            return None
+        try:
+            content_file = get_remote_image_content_file(url)
+            if content_file:
+                content_file.name = os.path.basename(url)
+            return content_file
+        except Exception as e:
+            print(f"下载图片失败 [{url}]: {e}")
+            return None
+
+    def _save_single_case(self, item):
+        """保存单个幸福案例，返回保存结果"""
+        case_id = item.get('id')
+        if not case_id:
+            return {'status': 'skipped', 'reason': '缺少 id 字段'}
+
+        # 检查是否已存在
+        if models.XingFuAnLi.objects.filter(_id=case_id).exists():
+            return {'status': 'skipped', 'reason': '已存在'}
+
+        try:
+            # 创建案例对象
+            obj = models.XingFuAnLi(
+                _id=case_id,
+                comment_num=item.get('comment_num', ''),
+                zan_status=bool(item.get('zan_status', False)),
+                commentStatus=bool(item.get('commentStatus', False)),
+                title=item.get('title', ''),
+                content=item.get('content', ''),
+                hits=item.get('hits', ''),
+                commentlist=json.dumps(item.get('commentlist', []), ensure_ascii=False),
+                addtime=self._parse_date(item.get('addtime')),
+                nickname=item.get('nickname', ''),
+            )
+
+            # 下载并保存头像
+            avatar_file = self._download_image(item.get('avatar'))
+            if avatar_file:
+                obj.avatar = avatar_file
+
+            # 先保存主对象，获取 id
+            obj.save()
+
+            # 下载并保存案例图片
+            img_urls = item.get('imgurl', [])
+            if img_urls:
+                for img_url in img_urls:
+                    img_content_file = self._download_image(img_url)
+                    if img_content_file:
+                        try:
+                            image_obj = models.Images(anliInfo=obj)
+                            image_obj.image = img_content_file
+                            image_obj.save()
+                        except Exception as e:
+                            print(f"保存图片记录失败 [{img_url}]: {e}")
+
+            return {'status': 'success', 'case_id': case_id}
+
+        except Exception as e:
+            print(f"保存案例失败 [id={case_id}]: {e}")
+            return {'status': 'failed', 'case_id': case_id, 'error': str(e)}
+
     def get(self, request):
         """
-         根据page 采集幸福案例
+        根据 page 采集幸福案例
         """
         page = request.query_params.get('page', 1)
-        result = getAnliByPage(page)
-        print(f'采集到的案例原始数据:{result}')
-        if result.get('code') == 200:
-            data = result.get('data').get('list')
-        else:
-            print(f'抓取幸福案例失败:{result.get("code")}')
-            return Response({'code': 400, "msg": '抓取失败', "data": result})
+        try:
+            page = int(page)
+        except (ValueError, TypeError):
+            page = 1
 
-        # 开始将幸福案例存入数据库中
+        # 采集数据
+        try:
+            result = getAnliByPage(page)
+        except Exception as e:
+            return Response({
+                'code': 500,
+                'msg': f'请求采集接口失败: {e}',
+                'data': None
+            })
+
+        if result.get('code') != 200:
+            return Response({
+                'code': 400,
+                'msg': '抓取幸福案例失败',
+                'data': result
+            })
+
+        data = result.get('data', {}).get('list', [])
+        if not data:
+            return Response({
+                'code': 200,
+                'msg': '该页没有数据',
+                'data': {'total': 0, 'success': 0, 'skipped': 0, 'failed': 0}
+            })
+
+        # 统计信息
+        stats = {'total': len(data), 'success': 0, 'skipped': 0, 'failed': 0, 'details': []}
+
+        # 逐条保存案例
         for item in data:
-            print(f"遍历每一项{item}")
+            save_result = self._save_single_case(item)
+            stats['details'].append(save_result)
+            status_key = save_result.get('status')
+            if status_key in stats:
+                stats[status_key] += 1
 
-            # 检查id是否已存在
-            if not models.XingFuAnLi.objects.filter(_id=item.get('id')).exists():
-                # 创建除 avatar和imgurl的对象
-                date_string = item.get('addtime')
-                date_object = datetime.strptime(date_string, "%Y-%m-%d").date()
-
-                obj = models.XingFuAnLi.objects.create(
-                    _id=item.get('id'),
-                    comment_num=item.get('comment_num'),
-                    zan_status=item.get('zan_status'),
-                    commentStatus=item.get('commentStatus'),
-                    title=item.get('title'),
-                    content=item.get('content'),
-                    hits=item.get('hits'),
-                    commentlist=json.dumps(item.get('commentlist')),
-                    addtime=date_object,
-                    nickname=item.get('nickname'),
-                )
-                # 保存头像
-                obj.avatar = get_remote_image_content_file(item.get('avatar'))
-                # 头像文件名
-                obj.avatar.name = os.path.basename(item.get('avatar'))
-
-                # 保存图片
-                if len(item.get('imgurl')) > 0:
-                    for img in item.get('imgurl'):
-                        print(img)
-                        img_content_file = get_remote_image_content_file(img)
-                        image_obj = models.Images.objects.create(anliInfo=obj)
-                        image_obj.image = img_content_file
-                        image_obj.image.name = os.path.basename(img)
-
-                        image_obj.save()
-
-                obj.save()
-
-            else:
-                print(f'已经存在')
-
-        return Response({'data': result, 'msg': 'ok'})
+        return Response({
+            'code': 200,
+            'msg': f'采集完成: 成功 {stats["success"]} 条, 跳过 {stats["skipped"]} 条, 失败 {stats["failed"]} 条',
+            'data': stats
+        })

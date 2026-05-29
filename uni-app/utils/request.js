@@ -36,10 +36,10 @@ export function request(config = {}) {
 					reject(res.data.data)
 				} else {
 					uni.showModal({
-						title: res.data.errMsg,
+						title: res.data.errMsg || '请求失败',
 						icon: "none",
 					});
-					rejct(res.data.data);
+					reject(res.data.data);
 				}
 			},
 			//请求失败后的回调函数

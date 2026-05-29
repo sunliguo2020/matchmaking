@@ -55,7 +55,7 @@ class UsersAdminModelAdmin(admin.ModelAdmin):
 
     def show_gender(self, obj):
         """
-
+        显示男女
         :param obj:
         :return:
         """

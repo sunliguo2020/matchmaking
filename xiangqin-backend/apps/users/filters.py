@@ -14,7 +14,8 @@ class UserFilter(filters.FilterSet):
     nickname = filters.CharFilter(field_name='nickname', lookup_expr='icontains', label='昵称模糊查询')
     min_age = filters.NumberFilter(field_name='age', lookup_expr='gte')
     max_age = filters.NumberFilter(field_name='age', lookup_expr='lte')
+    user_id = filters.NumberFilter(field_name='user_id', lookup_expr='exact', label='用户ID精确查询')
 
     class Meta:
         model = models.Users
-        fields = ['nickname', 'id', 'age', 'min_age', 'max_age']
+        fields = ['nickname', 'id', 'user_id', 'age', 'min_age', 'max_age']

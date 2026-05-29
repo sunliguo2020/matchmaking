@@ -43,21 +43,18 @@ class Users(models.Model):
 
     def delete(self, using=None, keep_parents=False):
         """
-
-        :param using:
-        :param keep_parents:
+        删除模型对象时，同时删除关联的头像文件
         """
-        # 在删除模型对象之前删除文件
         # 删除ImageField关联的文件
-        image_path = self.avatarURL.path
-        print(f'avatarURL文件{image_path}')
-        if default_storage.exists(image_path):
-            default_storage.delete(image_path)
-        # if self.avatarURL:
-        #     print('准备删除头像文件')
-        #     self.avatarURL.delete(save=False)
-        #     # 调用父类的delete方法完成实际的删除操作
-        super().delete(using=None, keep_parents=False)
+        if self.avatarURL and hasattr(self.avatarURL, 'path'):
+            try:
+                image_path = self.avatarURL.path
+                if default_storage.exists(image_path):
+                    default_storage.delete(image_path)
+                    print(f'已删除头像文件: {image_path}')
+            except Exception as e:
+                print(f'删除头像文件失败: {e}')
+        super().delete(using=using, keep_parents=keep_parents)
 
     def __str__(self):
         return self.nickname

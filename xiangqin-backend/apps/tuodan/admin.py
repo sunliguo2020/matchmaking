@@ -41,7 +41,7 @@ class XingFuAnLiAdmin(admin.ModelAdmin):
 
 @admin.register(models.Images)
 class AnliImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'image_tag', 'anliInfo', 'create_time', 'update_time']
+    list_display = ['id', 'image_tag', 'anliInfo']
     list_per_page = 10
 
     def image_tag(self, obj):

@@ -27,7 +27,7 @@ class XingFuAnLi(models.Model):
         return str(self.id)
 
 
-class Images(BaseModel):
+class Images(models.Model):
     """
     幸福案例中某个实例中要保存的图片。
 

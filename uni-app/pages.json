@@ -1,5 +1,12 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
+		{
+			"path": "pages/xingFuAnLi/xingFuAnLi",
+			"style": {
+				"navigationBarTitleText": "我们脱单了",
+				"enablePullDownRefresh": false
+			}
+		},
 		{
 			"path": "pages/index/index",
 			"style": {
@@ -14,17 +21,18 @@
 			}
 		},
 		{
-			"path": "pages/xingFuAnLi/xingFuAnLi",
-			"style": {
-				"navigationBarTitleText": "我们脱单了",
-				"enablePullDownRefresh": false
-			}
-		},
-		{
 			"path" : "pages/latest_updates/latest_updates",
 			"style" : 
 			{
 				"navigationBarTitleText" : "动态",
+				"enablePullDownRefresh" : false
+			}
+		},
+		{
+			"path" : "pages/userDetail/userDetail",
+			"style" : 
+			{
+				"navigationBarTitleText" : "会员详情",
 				"enablePullDownRefresh" : false
 			}
 		}
@@ -40,23 +48,22 @@
 		"color": "#9799a5",
 		"selectedColor": "#28b389",
 		"list": [{
-				"text": "首页",
-				"pagePath": "pages/index/index",
-				"selectedIconPath": "./static/tabBar/home-h.png",
-				"iconPath": "./static/tabBar/home.png"
+				"text": "我们脱单了",
+				"pagePath": "pages/xingFuAnLi/xingFuAnLi",
+				"selectedIconPath": "./static/tabBar/classify-h.png",
+				"iconPath": "./static/tabBar/classify.png"
 			},
-
-			{
-				"text": "首页",
+		{
+				"text": "会员",
 				"pagePath": "pages/home/home",
 				"selectedIconPath": "./static/tabBar/home-h.png",
 				"iconPath": "./static/tabBar/home.png"
 			},
 			{
-				"text": "我们脱单了",
-				"pagePath": "pages/xingFuAnLi/xingFuAnLi",
-				"selectedIconPath": "./static/tabBar/classify-h.png",
-				"iconPath": "./static/tabBar/classify.png"
+				"text": "动态",
+				"pagePath": "pages/latest_updates/latest_updates",
+				"selectedIconPath": "./static/tabBar/show-h.png",
+				"iconPath": "./static/tabBar/show.png"
 			}
 		]
 	}

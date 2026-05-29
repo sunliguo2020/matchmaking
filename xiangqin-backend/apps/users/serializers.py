@@ -13,3 +13,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Users
         fields = '__all__'
+
+
+class UserProfilePhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.UserProfilePhoto
+        fields = '__all__'
